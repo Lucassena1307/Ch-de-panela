@@ -17,27 +17,27 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "cha-de-panela.db"
 
 DEFAULT_GIFTS = [
-    # (nome, categoria, unlimited)
-    # Eletrodomésticos: unlimited=False → só uma pessoa pode escolher
-    ("Liquidificador", "Eletrodomésticos", False),
-    ("Mixer de mão", "Eletrodomésticos", False),
-    # Todos os outros: unlimited=True → várias pessoas podem escolher
     ("Jogo de panelas antiaderente", "Cozinha", True),
     ("Jogo de facas", "Cozinha", True),
-    ("Frigideira grande", "Cozinha", True),
-    ("Panela de pressão", "Cozinha", True),
+    ("Liquidificador", "Eletrodomésticos", True),
+    ("Mixer de mão", "Eletrodomésticos", True),
     ("Jogo de pratos (6 pessoas)", "Mesa", True),
     ("Jogo de copos", "Mesa", True),
     ("Jogo de talheres", "Mesa", True),
-    ("Jogo de xícaras", "Mesa", True),
-    ("Jogo de travessas", "Mesa", True),
     ("Tábua de corte", "Utensílios", True),
-    ("Escorredor de macarrão", "Utensílios", True),
     ("Conjunto de potes herméticos", "Organização", True),
     ("Jogo de formas para bolo", "Assar", True),
+    ("Frigideira grande", "Cozinha", True),
+    ("Escorredor de macarrão", "Utensílios", True),
+    ("Jogo de xícaras", "Mesa", True),
+    ("Panela de pressão", "Cozinha", True),
+    ("Jogo de travessas", "Mesa", True),
 ]
 
 app = Flask(__name__, static_folder="public", static_url_path="")
+
+with app.app_context():
+    init_db()
 
 
 def get_db():
