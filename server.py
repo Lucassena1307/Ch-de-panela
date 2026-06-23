@@ -17,27 +17,24 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "cha-de-panela.db"
 
 DEFAULT_GIFTS = [
+    ("Liquidificador", "Eletrodomésticos", False),
+    ("Mixer de mão", "Eletrodomésticos", False),
     ("Jogo de panelas antiaderente", "Cozinha", True),
     ("Jogo de facas", "Cozinha", True),
-    ("Liquidificador", "Eletrodomésticos", True),
-    ("Mixer de mão", "Eletrodomésticos", True),
+    ("Frigideira grande", "Cozinha", True),
+    ("Panela de pressão", "Cozinha", True),
     ("Jogo de pratos (6 pessoas)", "Mesa", True),
     ("Jogo de copos", "Mesa", True),
     ("Jogo de talheres", "Mesa", True),
+    ("Jogo de xícaras", "Mesa", True),
+    ("Jogo de travessas", "Mesa", True),
     ("Tábua de corte", "Utensílios", True),
+    ("Escorredor de macarrão", "Utensílios", True),
     ("Conjunto de potes herméticos", "Organização", True),
     ("Jogo de formas para bolo", "Assar", True),
-    ("Frigideira grande", "Cozinha", True),
-    ("Escorredor de macarrão", "Utensílios", True),
-    ("Jogo de xícaras", "Mesa", True),
-    ("Panela de pressão", "Cozinha", True),
-    ("Jogo de travessas", "Mesa", True),
 ]
 
 app = Flask(__name__, static_folder="public", static_url_path="")
-
-with app.app_context():
-    init_db()
 
 
 def get_db():
@@ -137,7 +134,6 @@ def _rsvp_summary(conn):
 
 def _gift_summary_items(conn):
     items = []
-
     for g in conn.execute(
         "SELECT name, reserved_by, custom_description, is_custom FROM gifts WHERE reserved_by IS NOT NULL"
     ):
@@ -173,7 +169,6 @@ def send_decline_email(guest_name):
       <ul>{''.join(gift_items) or '<li>Nenhum presente escolhido ainda</li>'}</ul>
     </div>
     """
-
     _send_email(f"🤍 {guest_name} não poderá ir ao chá de panela", html)
 
 
@@ -204,7 +199,6 @@ def send_gift_email(deliverer_name, gift_name, is_custom):
       <ul>{''.join(gift_items) or '<li>Nenhum presente escolhido ainda</li>'}</ul>
     </div>
     """
-
     _send_email(subject, html)
 
 
