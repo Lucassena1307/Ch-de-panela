@@ -566,3 +566,44 @@ footer {
     width: 100%;
   }
 }
+
+.gift-mine-label {
+  display: block;
+  font-size: 0.78rem;
+  color: #4caf50;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.gift-full-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #c0392b;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.gift-item.mine {
+  border-color: rgba(76, 175, 80, 0.4);
+  background: #f6fff6;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #c0392b;
+  border: 1.5px solid #e57373;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-cancel:hover {
+  background: #fff0f0;
+}
+
+.btn-disabled {
+  background: #e8e0d8 !important;
+  color: #a09080 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
