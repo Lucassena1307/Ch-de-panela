@@ -17,21 +17,22 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "cha-de-panela.db"
 
 DEFAULT_GIFTS = [
-    ("Liquidificador", "Eletrodomésticos", False),
-    ("Mixer de mão", "Eletrodomésticos", False),
-    ("Jogo de panelas antiaderente", "Cozinha", True),
-    ("Jogo de facas", "Cozinha", True),
-    ("Frigideira grande", "Cozinha", True),
-    ("Panela de pressão", "Cozinha", True),
-    ("Jogo de pratos (6 pessoas)", "Mesa", True),
-    ("Jogo de copos", "Mesa", True),
-    ("Jogo de talheres", "Mesa", True),
-    ("Jogo de xícaras", "Mesa", True),
-    ("Jogo de travessas", "Mesa", True),
-    ("Tábua de corte", "Utensílios", True),
-    ("Escorredor de macarrão", "Utensílios", True),
-    ("Conjunto de potes herméticos", "Organização", True),
-    ("Jogo de formas para bolo", "Assar", True),
+    # (nome, categoria, limite)
+    ("Liquidificador", "Eletrodomésticos", 1),
+    ("Mixer de mão", "Eletrodomésticos", 1),
+    ("Jogo de panelas antiaderente", "Cozinha", 7),
+    ("Jogo de facas", "Cozinha", 5),
+    ("Frigideira grande", "Cozinha", 4),
+    ("Panela de pressão", "Cozinha", 2),
+    ("Jogo de pratos", "Mesa", 10),
+    ("Jogo de copos", "Mesa", 5),
+    ("Jogo de talheres", "Mesa", 10),
+    ("Jogo de xícaras", "Mesa", 5),
+    ("Jogo de travessas", "Mesa", 2),
+    ("Tábua de corte", "Utensílios", 1),
+    ("Escorredor de macarrão", "Utensílios", 3),
+    ("Conjunto de potes herméticos", "Organização", 8),
+    ("Jogo de formas para bolo", "Assar", 4),
 ]
 
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -57,7 +58,7 @@ def init_db():
             name TEXT NOT NULL,
             category TEXT DEFAULT 'geral',
             is_custom INTEGER DEFAULT 0,
-            unlimited INTEGER DEFAULT 0,
+            max_reservations INTEGER DEFAULT 1,
             reserved_by TEXT,
             custom_description TEXT,
             reserved_at TEXT
@@ -66,27 +67,39 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             gift_id INTEGER NOT NULL,
             deliverer_name TEXT NOT NULL,
+            session_token TEXT,
             reserved_at TEXT DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (gift_id) REFERENCES gifts(id)
         );
     """)
 
+    # Migração: renomear unlimited para max_reservations se necessário
     columns = {row[1] for row in conn.execute("PRAGMA table_info(gifts)").fetchall()}
-    if "unlimited" not in columns:
-        conn.execute("ALTER TABLE gifts ADD COLUMN unlimited INTEGER DEFAULT 0")
+    if "unlimited" in columns and "max_reservations" not in columns:
+        conn.execute("ALTER TABLE gifts ADD COLUMN max_reservations INTEGER DEFAULT 1")
+        conn.execute("UPDATE gifts SET max_reservations = CASE WHEN unlimited = 1 THEN 999 ELSE 1 END")
+    if "max_reservations" not in columns:
+        conn.execute("ALTER TABLE gifts ADD COLUMN max_reservations INTEGER DEFAULT 1")
 
-    unlimited_by_name = {name: int(unlimited) for name, _, unlimited in DEFAULT_GIFTS}
-    for name, unlimited in unlimited_by_name.items():
+    # Migração: adicionar session_token se não existir
+    res_columns = {row[1] for row in conn.execute("PRAGMA table_info(gift_reservations)").fetchall()}
+    if "session_token" not in res_columns:
+        conn.execute("ALTER TABLE gift_reservations ADD COLUMN session_token TEXT")
+
+    # Atualizar limites dos presentes existentes
+    limits = {name: limit for name, _, limit in DEFAULT_GIFTS}
+    for name, limit in limits.items():
         conn.execute(
-            "UPDATE gifts SET unlimited = ? WHERE name = ? AND is_custom = 0",
-            (unlimited, name),
+            "UPDATE gifts SET max_reservations = ? WHERE name = ? AND is_custom = 0",
+            (limit, name),
         )
     conn.commit()
 
+    # Inserir presentes se não existirem
     count = conn.execute("SELECT COUNT(*) FROM gifts WHERE is_custom = 0").fetchone()[0]
     if count == 0:
         conn.executemany(
-            "INSERT INTO gifts (name, category, unlimited) VALUES (?, ?, ?)",
+            "INSERT INTO gifts (name, category, max_reservations) VALUES (?, ?, ?)",
             DEFAULT_GIFTS,
         )
         conn.commit()
@@ -125,7 +138,8 @@ def _send_email(subject, html):
         with urllib.request.urlopen(req) as resp:
             print(f"E-mail enviado! Status: {resp.status}")
     except urllib.error.HTTPError as e:
-        print(f"Erro ao enviar e-mail: {e.status} {e.read().decode()}")
+        body = e.read().decode()
+        print(f"Erro ao enviar e-mail: {e.status} {body}")
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
 
@@ -164,7 +178,7 @@ def send_decline_email(guest_name):
     html = f"""
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #4a3728;">
       <h2 style="color: #c45c6a;">Chá de Panela — Confirmação de ausência</h2>
-      <p><strong>{guest_name}</strong> informou que <strong>não poderá comparecer</strong> ao chá de panela.</p>
+      <p><strong>{guest_name}</strong> informou que <strong>não poderá comparecer</strong>.</p>
       <hr style="border: none; border-top: 1px solid #e8d5c4; margin: 24px 0;">
       <h3>Resumo de presenças</h3>
       <p><strong>Vão ({len(attending)}):</strong> {', '.join(attending) or 'Ninguém ainda'}</p>
@@ -223,31 +237,38 @@ def api_event():
 def api_gifts():
     conn = get_db()
     rows = conn.execute("""
-        SELECT id, name, category, is_custom, unlimited, reserved_by, custom_description
+        SELECT id, name, category, is_custom, max_reservations, reserved_by, custom_description
         FROM gifts ORDER BY is_custom ASC, category ASC, name ASC
     """).fetchall()
 
-    unlimited_reservations = {}
+    reservation_counts = {}
+    reservation_tokens = {}
     for row in conn.execute("""
-        SELECT gift_id, deliverer_name FROM gift_reservations ORDER BY reserved_at ASC
+        SELECT gift_id, COUNT(*) as cnt, GROUP_CONCAT(session_token) as tokens
+        FROM gift_reservations GROUP BY gift_id
     """):
-        unlimited_reservations.setdefault(row["gift_id"], []).append(row["deliverer_name"])
+        reservation_counts[row["gift_id"]] = row["cnt"]
+        reservation_tokens[row["gift_id"]] = (row["tokens"] or "").split(",")
 
     conn.close()
 
     result = []
     for r in rows:
-        is_unlimited = bool(r["unlimited"])
-        reserved_names = unlimited_reservations.get(r["id"], [])
+        max_res = r["max_reservations"]
+        count = reservation_counts.get(r["id"], 0)
+        is_single = max_res == 1
+
         result.append({
             "id": r["id"],
             "name": r["name"],
             "category": r["category"],
             "isCustom": bool(r["is_custom"]),
-            "unlimited": is_unlimited,
-            "reserved": bool(r["reserved_by"]) if not is_unlimited else False,
+            "maxReservations": max_res,
+            "reservationCount": count,
+            "full": count >= max_res,
+            "reserved": bool(r["reserved_by"]) if is_single else False,
             "reservedBy": r["reserved_by"],
-            "reservedByList": reserved_names,
+            "sessionTokens": reservation_tokens.get(r["id"], []),
             "customDescription": r["custom_description"],
         })
 
@@ -286,6 +307,7 @@ def api_rsvp():
 def api_reserve_gift(gift_id):
     data = request.get_json(silent=True) or {}
     deliverer_name = (data.get("delivererName") or "").strip()
+    session_token = (data.get("sessionToken") or "").strip()
 
     if len(deliverer_name) < 2:
         return jsonify({"error": "Informe o nome de quem entregará o presente."}), 400
@@ -301,44 +323,22 @@ def api_reserve_gift(gift_id):
         conn.close()
         return jsonify({"error": "Presente inválido."}), 400
 
+    max_res = gift["max_reservations"]
+    count = conn.execute(
+        "SELECT COUNT(*) FROM gift_reservations WHERE gift_id = ?", (gift_id,)
+    ).fetchone()[0]
+
+    if count >= max_res:
+        conn.close()
+        return jsonify({"error": "Este presente já atingiu o limite de escolhas."}), 409
+
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    if gift["unlimited"]:
-        conn.execute(
-            "INSERT INTO gift_reservations (gift_id, deliverer_name, reserved_at) VALUES (?, ?, ?)",
-            (gift_id, deliverer_name, now),
-        )
-        conn.commit()
-        conn.close()
-
-        try:
-            send_gift_email(deliverer_name, gift["name"], False)
-        except Exception as exc:
-            print(f"Erro ao enviar e-mail: {exc}")
-
-        return jsonify({
-            "success": True,
-            "gift": {
-                "id": gift["id"],
-                "name": gift["name"],
-                "reservedBy": deliverer_name,
-            },
-        })
-
-    if gift["reserved_by"]:
-        conn.close()
-        return jsonify({"error": "Este presente já foi escolhido por outra pessoa."}), 409
-
     conn.execute(
-        "UPDATE gifts SET reserved_by = ?, reserved_at = ? WHERE id = ? AND reserved_by IS NULL",
-        (deliverer_name, now, gift_id),
+        "INSERT INTO gift_reservations (gift_id, deliverer_name, session_token, reserved_at) VALUES (?, ?, ?, ?)",
+        (gift_id, deliverer_name, session_token, now),
     )
     conn.commit()
-    updated = conn.execute("SELECT * FROM gifts WHERE id = ?", (gift_id,)).fetchone()
     conn.close()
-
-    if not updated["reserved_by"]:
-        return jsonify({"error": "Este presente acabou de ser escolhido por outra pessoa."}), 409
 
     try:
         send_gift_email(deliverer_name, gift["name"], False)
@@ -348,11 +348,34 @@ def api_reserve_gift(gift_id):
     return jsonify({
         "success": True,
         "gift": {
-            "id": updated["id"],
-            "name": updated["name"],
-            "reservedBy": updated["reserved_by"],
+            "id": gift_id,
+            "name": gift["name"],
+            "reservedBy": deliverer_name,
+            "sessionToken": session_token,
         },
     })
+
+
+@app.route("/api/gifts/<int:gift_id>/cancel", methods=["POST"])
+def api_cancel_gift(gift_id):
+    data = request.get_json(silent=True) or {}
+    session_token = (data.get("sessionToken") or "").strip()
+
+    if not session_token:
+        return jsonify({"error": "Token inválido."}), 400
+
+    conn = get_db()
+    result = conn.execute(
+        "DELETE FROM gift_reservations WHERE gift_id = ? AND session_token = ?",
+        (gift_id, session_token),
+    )
+    conn.commit()
+    conn.close()
+
+    if result.rowcount == 0:
+        return jsonify({"error": "Reserva não encontrada."}), 404
+
+    return jsonify({"success": True})
 
 
 @app.route("/api/gifts/other", methods=["POST"])
@@ -419,14 +442,11 @@ def api_summary():
         }
         for g in single_gifts
     ]
-    gifts.extend(
-        {
-            "name": g["name"],
-            "reservedBy": g["reserved_by"],
-            "reservedAt": g["reserved_at"],
-        }
-        for g in multi_gifts
-    )
+    gifts.extend({
+        "name": g["name"],
+        "reservedBy": g["reserved_by"],
+        "reservedAt": g["reserved_at"],
+    } for g in multi_gifts)
 
     return jsonify({
         "attending": [r["guest_name"] for r in rsvps if r["attending"]],
