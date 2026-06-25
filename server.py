@@ -1,6 +1,10 @@
 import os
 import sqlite3
 import smtplib
+import threading
+import urllib.request
+import urllib.error
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
@@ -106,35 +110,43 @@ def init_db():
     conn.close()
 
 
-def _send_email(subject, html):
+def _send_email_async(subject, html):
     organizer = os.getenv("ORGANIZER_EMAIL")
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_pass = os.getenv("SMTP_PASS")
+    api_key = os.getenv("RESEND_API_KEY")
 
-    if not organizer:
-        print("ORGANIZER_EMAIL não configurado — e-mail não enviado.")
-        return
-    if not smtp_user or not smtp_pass:
-        print("[simulado] " + subject)
+    if not organizer or not api_key:
+        print("ORGANIZER_EMAIL ou RESEND_API_KEY não configurado.")
         return
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f'"Chá de Panela" <{smtp_user}>'
-    msg["To"] = organizer
-    msg.attach(MIMEText(html, "html", "utf-8"))
+    payload = json.dumps({
+        "from": "Chá de Panela <onboarding@resend.dev>",
+        "to": [organizer],
+        "subject": subject,
+        "html": html,
+    }).encode("utf-8")
 
-    host = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
-    port = int(os.getenv("SMTP_PORT", "587"))
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
 
     try:
-        with smtplib.SMTP(host, port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, organizer, msg.as_string())
-        print(f"E-mail enviado para {organizer}")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            print(f"E-mail enviado! Status: {resp.status}")
+    except urllib.error.HTTPError as e:
+        print(f"Erro ao enviar e-mail: {e.status} {e.read().decode()}")
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
+
+
+def _send_email(subject, html):
+    t = threading.Thread(target=_send_email_async, args=(subject, html), daemon=True)
+    t.start()
 
 
 def _rsvp_summary(conn):
