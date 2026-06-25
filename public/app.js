@@ -1,3 +1,17 @@
+// Token de sessão único por dispositivo
+let sessionToken = localStorage.getItem('sessionToken');
+if (!sessionToken) {
+  sessionToken = crypto.randomUUID();
+  localStorage.setItem('sessionToken', sessionToken);
+}
+
+// Reservas feitas neste dispositivo: { giftId: true }
+let myReservations = JSON.parse(localStorage.getItem('myReservations') || '{}');
+
+function saveMyReservations() {
+  localStorage.setItem('myReservations', JSON.stringify(myReservations));
+}
+
 const state = {
   guestName: '',
   selectedGiftId: null,
@@ -77,38 +91,59 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach((btn) => {
 });
 
 function renderGiftItem(gift) {
-  // Itens de uma só pessoa: mostrar apenas "Já escolhido" sem revelar quem
-  const reservedLabel = gift.reserved
-    ? `<span class="gift-reserved-label">Já escolhido</span>`
-    : '';
+  const isMine = myReservations[gift.id];
+  const isFull = gift.full;
 
-  // Itens unlimited: mostrar quantas pessoas escolheram, sem os nomes
-  const unlimitedNote =
-    gift.unlimited && gift.reservedByList?.length
-      ? `<span class="gift-unlimited-label">Já escolhido por ${gift.reservedByList.length} pessoa(s)</span>`
-      : gift.unlimited
-        ? `<span class="gift-unlimited-badge">Pode ser escolhido por várias pessoas</span>`
-        : '';
-
-  if (gift.reserved) {
+  // Presente de limite 1 já reservado por outra pessoa
+  if (gift.reserved && !isMine) {
     return `
       <div class="gift-item reserved">
         <div class="gift-info">
           <strong>${escapeHtml(gift.name)}</strong>
           <span>${escapeHtml(gift.category)}</span>
         </div>
-        ${reservedLabel}
+        <span class="gift-reserved-label">Já escolhido</span>
       </div>`;
   }
 
+  // Presente que eu escolhi — mostro botão de cancelar
+  if (isMine) {
+    return `
+      <div class="gift-item mine">
+        <div class="gift-info">
+          <strong>${escapeHtml(gift.name)}</strong>
+          <span>${escapeHtml(gift.category)}</span>
+          <span class="gift-mine-label">✓ Você escolheu este</span>
+        </div>
+        <button type="button" class="btn btn-cancel" data-id="${gift.id}">
+          Cancelar
+        </button>
+      </div>`;
+  }
+
+  // Nota de quantas vagas restam
+  let note = '';
+  if (gift.maxReservations > 1) {
+    const remaining = gift.maxReservations - gift.reservationCount;
+    if (isFull) {
+      note = `<span class="gift-full-label">Limite atingido</span>`;
+    } else if (gift.reservationCount > 0) {
+      note = `<span class="gift-unlimited-label">${remaining} vaga(s) restante(s)</span>`;
+    } else {
+      note = `<span class="gift-unlimited-badge">Até ${gift.maxReservations} pessoas podem escolher</span>`;
+    }
+  }
+
   return `
-    <div class="gift-item${gift.unlimited ? ' unlimited' : ''}" data-id="${gift.id}">
+    <div class="gift-item${isFull ? ' reserved' : ''}" data-id="${gift.id}">
       <div class="gift-info">
         <strong>${escapeHtml(gift.name)}</strong>
         <span>${escapeHtml(gift.category)}</span>
-        ${unlimitedNote}
+        ${note}
       </div>
-      <button type="button" class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">
+      <button type="button" class="btn btn-choose${isFull ? ' btn-disabled' : ''}"
+        data-id="${gift.id}" data-name="${escapeHtml(gift.name)}"
+        ${isFull ? 'disabled' : ''}>
         Escolher
       </button>
     </div>`;
@@ -130,18 +165,54 @@ async function loadGifts() {
 
     if (!res.ok) throw new Error(gifts.error || 'Erro ao carregar presentes.');
 
+    // Atualizar myReservations com base nos tokens da sessão
+    gifts.forEach(g => {
+      if (g.sessionTokens && g.sessionTokens.includes(sessionToken)) {
+        myReservations[g.id] = true;
+      }
+    });
+    saveMyReservations();
+
     grid.innerHTML = gifts
       .filter((g) => !g.isCustom)
       .map(renderGiftItem)
       .join('');
 
-    grid.querySelectorAll('.btn-choose').forEach((btn) => {
+    // Botões escolher
+    grid.querySelectorAll('.btn-choose:not([disabled])').forEach((btn) => {
       btn.addEventListener('click', () => {
         state.selectedGiftId = Number(btn.dataset.id);
         state.selectedGiftName = btn.dataset.name;
         document.getElementById('selected-gift-name').textContent = state.selectedGiftName;
         document.getElementById('deliverer-name-gift').value = state.guestName;
         showStep('nameGift');
+      });
+    });
+
+    // Botões cancelar
+    grid.querySelectorAll('.btn-cancel').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const giftId = Number(btn.dataset.id);
+        btn.disabled = true;
+        btn.textContent = 'Cancelando...';
+        try {
+          const res = await fetch(`/api/gifts/${giftId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionToken }),
+          });
+          if (res.ok) {
+            delete myReservations[giftId];
+            saveMyReservations();
+            loadGifts();
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Cancelar';
+          }
+        } catch {
+          btn.disabled = false;
+          btn.textContent = 'Cancelar';
+        }
       });
     });
 
@@ -173,17 +244,20 @@ document.getElementById('name-gift-form').addEventListener('submit', async (e) =
     const res = await fetch(`/api/gifts/${state.selectedGiftId}/reserve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delivererName }),
+      body: JSON.stringify({ delivererName, sessionToken }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao reservar presente.');
 
+    myReservations[state.selectedGiftId] = true;
+    saveMyReservations();
+
     showSuccess(delivererName, data.gift.name);
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.classList.remove('hidden');
-    if (err.message.includes('já foi escolhido') || err.message.includes('acabou de ser')) {
+    if (err.message.includes('limite') || err.message.includes('já foi escolhido')) {
       setTimeout(() => {
         showStep('gifts');
         loadGifts();
