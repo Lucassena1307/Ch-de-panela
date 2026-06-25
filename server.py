@@ -112,34 +112,28 @@ def init_db():
 
 def _send_email_async(subject, html):
     organizer = os.getenv("ORGANIZER_EMAIL")
-    api_key = os.getenv("RESEND_API_KEY")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
 
-    if not organizer or not api_key:
-        print("ORGANIZER_EMAIL ou RESEND_API_KEY não configurado.")
+    if not organizer:
+        print("ORGANIZER_EMAIL não configurado.")
+        return
+    if not smtp_user or not smtp_pass:
+        print("[simulado] " + subject)
         return
 
-    payload = json.dumps({
-        "from": "Chá de Panela <onboarding@resend.dev>",
-        "to": [organizer],
-        "subject": subject,
-        "html": html,
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f'"Chá de Panela" <{smtp_user}>'
+    msg["To"] = organizer
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f"E-mail enviado! Status: {resp.status}")
-    except urllib.error.HTTPError as e:
-        print(f"Erro ao enviar e-mail: {e.status} {e.read().decode()}")
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, organizer, msg.as_string())
+        print(f"E-mail enviado para {organizer}")
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
 
