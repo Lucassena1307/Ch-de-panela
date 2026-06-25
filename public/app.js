@@ -26,7 +26,7 @@ async function loadEvent() {
     document.getElementById('event-host').textContent = data.host;
     document.getElementById('event-location').textContent = data.location;
   } catch {
-    document.getElementById('event-host').textContent = 'dsds';
+    document.getElementById('event-host').textContent = '';
   }
 }
 
@@ -77,13 +77,15 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach((btn) => {
 });
 
 function renderGiftItem(gift) {
+  // Itens de uma só pessoa: mostrar apenas "Já escolhido" sem revelar quem
   const reservedLabel = gift.reserved
-    ? `<span class="gift-reserved-label">Escolhido por ${escapeHtml(gift.reservedBy)}</span>`
+    ? `<span class="gift-reserved-label">Já escolhido</span>`
     : '';
 
+  // Itens unlimited: mostrar quantas pessoas escolheram, sem os nomes
   const unlimitedNote =
     gift.unlimited && gift.reservedByList?.length
-      ? `<span class="gift-unlimited-label">Já escolhido por: ${gift.reservedByList.map(escapeHtml).join(', ')}</span>`
+      ? `<span class="gift-unlimited-label">Já escolhido por ${gift.reservedByList.length} pessoa(s)</span>`
       : gift.unlimited
         ? `<span class="gift-unlimited-badge">Pode ser escolhido por várias pessoas</span>`
         : '';
@@ -122,13 +124,11 @@ async function loadGifts() {
   errorEl.classList.add('hidden');
 
   try {
-   const res = await fetch('/api/gifts');
-const text = await res.text(); // Lê o que veio primeiro
+    const res = await fetch('/api/gifts');
+    const text = await res.text();
+    const gifts = text ? JSON.parse(text) : [];
 
-// Só transforma em JSON se a resposta não for vazia
-const gifts = text ? JSON.parse(text) : []; 
-
-if (!res.ok) throw new Error(gifts.error || 'Erro ao carregar presentes.');
+    if (!res.ok) throw new Error(gifts.error || 'Erro ao carregar presentes.');
 
     grid.innerHTML = gifts
       .filter((g) => !g.isCustom)
