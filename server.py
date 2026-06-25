@@ -1,8 +1,8 @@
 import os
 import sqlite3
-import urllib.request
-import urllib.error
-import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import datetime
 from pathlib import Path
 
@@ -108,38 +108,31 @@ def init_db():
 
 def _send_email(subject, html):
     organizer = os.getenv("ORGANIZER_EMAIL")
-    api_key = os.getenv("RESEND_API_KEY")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
 
     if not organizer:
         print("ORGANIZER_EMAIL não configurado — e-mail não enviado.")
         return
-    if not api_key:
-        print("RESEND_API_KEY não configurado — e-mail não enviado.")
+    if not smtp_user or not smtp_pass:
+        print("[simulado] " + subject)
         return
 
-    payload = json.dumps({
-        "from": "Chá de Panela <onboarding@resend.dev>",
-        "to": [organizer],
-        "subject": subject,
-        "html": html,
-    }).encode("utf-8")
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f'"Chá de Panela" <{smtp_user}>'
+    msg["To"] = organizer
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
+    host = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
+    port = int(os.getenv("SMTP_PORT", "587"))
 
     try:
-        with urllib.request.urlopen(req) as resp:
-            print(f"E-mail enviado! Status: {resp.status}")
-    except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        print(f"Erro ao enviar e-mail: {e.status} {body}")
+        with smtplib.SMTP(host, port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, organizer, msg.as_string())
+        print(f"E-mail enviado para {organizer}")
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
 
