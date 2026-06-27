@@ -272,15 +272,15 @@ input[type="text"]:focus {
 }
 
 .btn-choose {
-  background: #c45c8a;
+  background: #7a4f3a;
   color: white;
   padding: 0.55rem 1rem;
   font-size: 0.85rem;
-  box-shadow: 0 2px 8px rgba(196, 92, 138, 0.35);
+  box-shadow: 0 2px 8px rgba(122, 79, 58, 0.35);
 }
 
 .btn-choose:hover {
-  background: #a8476f;
+  background: #5e3a28;
 }
 
 .btn-choose:disabled,
