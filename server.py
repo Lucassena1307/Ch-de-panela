@@ -1,1 +1,607 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
+:root {
+  --royal: #2E4A9E;
+  --royal-light: #5B7FD4;
+  --royal-pale: #EEF2FB;
+  --royal-deep: #1A2F6B;
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --cream: #F8F9FE;
+  --warm-white: #FDFEFF;
+  --brown: #1A1F3A;
+  --brown-light: #4A5480;
+  --shadow: 0 8px 32px rgba(46, 74, 158, 0.14);
+  --radius: 16px;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--brown);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.bg-pattern {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(46, 74, 158, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(201, 168, 76, 0.10) 0%, transparent 50%),
+    linear-gradient(160deg, #F8F9FE 0%, #EEF2FB 50%, #F0F4FF 100%);
+  z-index: -1;
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.step {
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+
+.step.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background: var(--warm-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  border: 1px solid rgba(46, 74, 158, 0.12);
+}
+
+/* Invite */
+.invite-card {
+  text-align: center;
+}
+
+.card-header .ornament {
+  font-size: 1.5rem;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--brown-light);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+.card-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 8vw, 3.2rem);
+  font-weight: 600;
+  color: var(--royal);
+  line-height: 1.1;
+  margin: 0.25rem 0;
+}
+
+.host-line {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-style: italic;
+  color: var(--brown-light);
+  margin-bottom: 2rem;
+}
+
+.host-line span {
+  color: var(--royal-deep);
+  font-weight: 600;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+  background: var(--royal-pale);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.detail-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.detail strong {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--royal);
+  font-weight: 500;
+}
+
+.detail p {
+  font-size: 0.95rem;
+  color: var(--brown);
+}
+
+.invite-message {
+  font-size: 1rem;
+  color: var(--brown-light);
+  margin-bottom: 2rem;
+  line-height: 1.7;
+}
+
+/* Forms */
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--brown);
+  margin-bottom: 0.4rem;
+  text-align: left;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid rgba(46, 74, 158, 0.2);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--brown);
+  background: var(--warm-white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 1.25rem;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--royal-light);
+  box-shadow: 0 0 0 3px rgba(46, 74, 158, 0.12);
+}
+
+.rsvp-question {
+  font-weight: 500;
+  margin: 0.5rem 0 1rem;
+  text-align: center;
+  font-size: 1.05rem;
+}
+
+.rsvp-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-yes {
+  background: var(--royal);
+  color: white;
+  box-shadow: 0 4px 14px rgba(46, 74, 158, 0.35);
+}
+
+.btn-yes:hover {
+  background: var(--royal-deep);
+}
+
+.btn-no {
+  background: transparent;
+  color: var(--brown-light);
+  border: 1.5px solid rgba(46, 74, 158, 0.25);
+}
+
+.btn-no:hover {
+  background: var(--royal-pale);
+}
+
+.btn-primary {
+  width: 100%;
+  background: var(--royal);
+  color: white;
+  padding: 1rem;
+  font-size: 1rem;
+  box-shadow: 0 4px 14px rgba(46, 74, 158, 0.3);
+  margin-top: 0.5rem;
+}
+
+.btn-primary:hover {
+  background: var(--royal-deep);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--royal);
+  border: 1.5px solid var(--royal-light);
+  padding: 0.6rem 1.2rem;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  background: var(--royal-pale);
+}
+
+.btn-choose {
+  background: var(--gold);
+  color: white;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-choose:hover {
+  background: #b8933a;
+}
+
+.btn-choose:disabled,
+.btn-taken {
+  background: #e8e0d8;
+  color: #a09080;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.error-msg {
+  color: #c0392b;
+  font-size: 0.875rem;
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.loading {
+  text-align: center;
+  color: var(--brown-light);
+  padding: 2rem;
+}
+
+/* Decline */
+.message-card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.message-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.message-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--brown);
+  margin-bottom: 1rem;
+}
+
+.message-card p {
+  color: var(--brown-light);
+  margin-bottom: 0.75rem;
+}
+
+.guest-name-display {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+}
+
+/* Gifts */
+.step-nav {
+  margin-bottom: 1rem;
+}
+
+.step-badge {
+  display: inline-block;
+  background: var(--royal-pale);
+  color: var(--royal);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.gifts-card h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--royal);
+  margin-bottom: 0.75rem;
+}
+
+.gifts-intro {
+  color: var(--brown-light);
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+
+.gifts-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.gift-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--cream);
+  border-radius: 12px;
+  border: 1px solid rgba(46, 74, 158, 0.12);
+  transition: border-color 0.2s;
+}
+
+.gift-item.reserved {
+  opacity: 0.65;
+  background: #f0f2f8;
+}
+
+.gift-info strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--brown);
+}
+
+.gift-info span {
+  font-size: 0.78rem;
+  color: var(--brown-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gift-reserved-label {
+  font-size: 0.8rem;
+  color: var(--brown-light);
+  font-style: italic;
+}
+
+.gift-unlimited-badge {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gold);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.gift-unlimited-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--brown-light);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.gift-full-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #c0392b;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.gift-mine-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--royal);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.gift-item.mine {
+  border-color: rgba(46, 74, 158, 0.4);
+  background: #f0f4ff;
+}
+
+.other-gift-section {
+  border-top: 1px dashed rgba(46, 74, 158, 0.25);
+  padding-top: 1.25rem;
+}
+
+.other-gift-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, var(--royal-pale), #f5f8ff);
+  border-radius: 12px;
+  border: 1.5px dashed var(--royal-light);
+}
+
+.other-gift-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.other-icon {
+  font-size: 1.75rem;
+}
+
+.other-gift-info strong {
+  display: block;
+  color: var(--royal);
+}
+
+.other-gift-info p {
+  font-size: 0.85rem;
+  color: var(--brown-light);
+}
+
+/* Name step */
+.name-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--royal);
+  margin-bottom: 0.5rem;
+}
+
+.name-card > p {
+  color: var(--brown-light);
+  margin-bottom: 1.5rem;
+}
+
+.selected-gift-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--royal-pale);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.selected-gift-preview span {
+  font-size: 2rem;
+}
+
+.selected-gift-preview p {
+  font-size: 0.9rem;
+  color: var(--brown-light);
+}
+
+.selected-gift-preview strong {
+  color: var(--brown);
+  font-size: 1.05rem;
+}
+
+/* Success */
+.success-card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.success-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.success-card h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--royal);
+  margin-bottom: 0.75rem;
+}
+
+.success-details {
+  background: var(--royal-pale);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.success-details p {
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.success-details p:last-child {
+  margin-bottom: 0;
+}
+
+.success-note {
+  color: var(--brown-light);
+  font-style: italic;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #c0392b;
+  border: 1.5px solid #e57373;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-cancel:hover {
+  background: #fff0f0;
+}
+
+.btn-disabled {
+  background: #e8e0d8 !important;
+  color: #a09080 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--brown-light);
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .rsvp-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .gift-item,
+  .other-gift-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .gift-item .btn,
+  .other-gift-card .btn {
+    width: 100%;
+  }
+}
