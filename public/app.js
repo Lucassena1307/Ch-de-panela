@@ -5,7 +5,7 @@ if (!sessionToken) {
   localStorage.setItem('sessionToken', sessionToken);
 }
 
-// Reservas feitas neste dispositivo: { giftId: true }
+// Reservas feitas neste dispositivo: { giftId: { count, tokens: [] } }
 let myReservations = JSON.parse(localStorage.getItem('myReservations') || '{}');
 
 function saveMyReservations() {
@@ -16,6 +16,7 @@ const state = {
   guestName: '',
   selectedGiftId: null,
   selectedGiftName: '',
+  pendingQuantity: 1,
 };
 
 const steps = {
@@ -91,59 +92,96 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach((btn) => {
 });
 
 function renderGiftItem(gift) {
-  const isMine = myReservations[gift.id];
+  const myData = myReservations[gift.id];
+  const myCount = myData ? myData.count : 0;
+  const isMultiple = gift.maxReservations > 1;
   const isFull = gift.full;
 
-  // Presente de limite 1 já reservado por outra pessoa
-  if (gift.reserved && !isMine) {
+  // Item de vaga única
+  if (!isMultiple) {
+    // Eu escolhi neste dispositivo
+    if (myCount > 0) {
+      return `
+        <div class="gift-item gift-mine">
+          <div class="gift-info">
+            <strong>${escapeHtml(gift.name)}</strong>
+            <span class="gift-category">${escapeHtml(gift.category)}</span>
+            <span class="gift-mine-label">✓ Você escolheu este</span>
+          </div>
+          <button class="btn btn-cancel" data-id="${gift.id}" data-token="${myData.tokens[0]}">
+            Cancelar
+          </button>
+        </div>`;
+    }
+    // Já escolhido por outro
+    if (gift.reserved) {
+      return `
+        <div class="gift-item gift-taken">
+          <div class="gift-info">
+            <strong>${escapeHtml(gift.name)}</strong>
+            <span class="gift-category">${escapeHtml(gift.category)}</span>
+            <span class="gift-taken-label">Já foi escolhido</span>
+          </div>
+        </div>`;
+    }
+    // Disponível
     return `
-      <div class="gift-item reserved">
+      <div class="gift-item">
         <div class="gift-info">
           <strong>${escapeHtml(gift.name)}</strong>
-          <span>${escapeHtml(gift.category)}</span>
+          <span class="gift-category">${escapeHtml(gift.category)}</span>
         </div>
-        <span class="gift-reserved-label">Já escolhido</span>
-      </div>`;
-  }
-
-  // Presente que eu escolhi — mostro botão de cancelar
-  if (isMine) {
-    return `
-      <div class="gift-item mine">
-        <div class="gift-info">
-          <strong>${escapeHtml(gift.name)}</strong>
-          <span>${escapeHtml(gift.category)}</span>
-          <span class="gift-mine-label">✓ Você escolheu este</span>
-        </div>
-        <button type="button" class="btn btn-cancel" data-id="${gift.id}">
-          Cancelar
+        <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">
+          Escolher
         </button>
       </div>`;
   }
 
-  // Nota de quantas vagas restam
-  let note = '';
-  if (gift.maxReservations > 1) {
-    const remaining = gift.maxReservations - gift.reservationCount;
-    if (isFull) {
-      note = `<span class="gift-full-label">Limite atingido</span>`;
-    } else if (gift.reservationCount > 0) {
-      note = `<span class="gift-unlimited-label">${remaining} vaga(s) restante(s)</span>`;
-    } else {
-      note = `<span class="gift-unlimited-badge">Até ${gift.maxReservations} pessoas podem escolher</span>`;
-    }
+  // Item de múltiplas vagas
+  const remaining = gift.maxReservations - gift.reservationCount;
+
+  // Tenho reservas neste dispositivo
+  if (myCount > 0) {
+    const canAddMore = !isFull && myCount < gift.maxReservations;
+    return `
+      <div class="gift-item gift-mine gift-multiple">
+        <div class="gift-info">
+          <strong>${escapeHtml(gift.name)}</strong>
+          <span class="gift-category">${escapeHtml(gift.category)}</span>
+          <span class="gift-mine-label">✓ Você escolheu ${myCount}x</span>
+          ${!isFull ? `<span class="gift-slots-label">${remaining} vaga(s) restante(s)</span>` : '<span class="gift-full-label">Esgotado</span>'}
+        </div>
+        <div class="gift-counter-group">
+          <button class="btn btn-counter btn-cancel-one" data-id="${gift.id}" data-token="${myData.tokens[myData.tokens.length - 1]}">−</button>
+          <span class="gift-counter-num">${myCount}</span>
+          <button class="btn btn-counter btn-add-one ${!canAddMore ? 'btn-counter-disabled' : ''}"
+            data-id="${gift.id}" data-name="${escapeHtml(gift.name)}"
+            ${!canAddMore ? 'disabled' : ''}>+</button>
+        </div>
+      </div>`;
   }
 
+  // Esgotado sem minhas reservas
+  if (isFull) {
+    return `
+      <div class="gift-item gift-taken">
+        <div class="gift-info">
+          <strong>${escapeHtml(gift.name)}</strong>
+          <span class="gift-category">${escapeHtml(gift.category)}</span>
+          <span class="gift-full-label">Esgotado</span>
+        </div>
+      </div>`;
+  }
+
+  // Disponível com vagas
   return `
-    <div class="gift-item${isFull ? ' reserved' : ''}" data-id="${gift.id}">
+    <div class="gift-item gift-multiple">
       <div class="gift-info">
         <strong>${escapeHtml(gift.name)}</strong>
-        <span>${escapeHtml(gift.category)}</span>
-        ${note}
+        <span class="gift-category">${escapeHtml(gift.category)}</span>
+        <span class="gift-slots-label">${remaining} vaga(s) disponível(is)</span>
       </div>
-      <button type="button" class="btn btn-choose${isFull ? ' btn-disabled' : ''}"
-        data-id="${gift.id}" data-name="${escapeHtml(gift.name)}"
-        ${isFull ? 'disabled' : ''}>
+      <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">
         Escolher
       </button>
     </div>`;
@@ -162,13 +200,19 @@ async function loadGifts() {
     const res = await fetch('/api/gifts');
     const text = await res.text();
     const gifts = text ? JSON.parse(text) : [];
-
     if (!res.ok) throw new Error(gifts.error || 'Erro ao carregar presentes.');
 
-    // Atualizar myReservations com base nos tokens da sessão
+    // Sincronizar myReservations com tokens da sessão vindos do servidor
     gifts.forEach(g => {
-      if (g.sessionTokens && g.sessionTokens.includes(sessionToken)) {
-        myReservations[g.id] = true;
+      const myTokens = (g.sessionTokens || []).filter(t => t === sessionToken);
+      if (myTokens.length > 0) {
+        myReservations[g.id] = {
+          count: myTokens.length,
+          tokens: myTokens,
+        };
+      } else if (myReservations[g.id]) {
+        // Limpar se o servidor não reconhece mais
+        delete myReservations[g.id];
       }
     });
     saveMyReservations();
@@ -178,42 +222,38 @@ async function loadGifts() {
       .map(renderGiftItem)
       .join('');
 
-    // Botões escolher
-    grid.querySelectorAll('.btn-choose:not([disabled])').forEach((btn) => {
+    // Botão escolher (único ou primeira vez múltiplo)
+    grid.querySelectorAll('.btn-choose').forEach((btn) => {
       btn.addEventListener('click', () => {
         state.selectedGiftId = Number(btn.dataset.id);
         state.selectedGiftName = btn.dataset.name;
+        state.pendingQuantity = 1;
         document.getElementById('selected-gift-name').textContent = state.selectedGiftName;
         document.getElementById('deliverer-name-gift').value = state.guestName;
         showStep('nameGift');
       });
     });
 
-    // Botões cancelar
-    grid.querySelectorAll('.btn-cancel').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const giftId = Number(btn.dataset.id);
-        btn.disabled = true;
-        btn.textContent = 'Cancelando...';
-        try {
-          const res = await fetch(`/api/gifts/${giftId}/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionToken }),
-          });
-          if (res.ok) {
-            delete myReservations[giftId];
-            saveMyReservations();
-            loadGifts();
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'Cancelar';
-          }
-        } catch {
-          btn.disabled = false;
-          btn.textContent = 'Cancelar';
-        }
+    // Botão + (adicionar mais uma unidade)
+    grid.querySelectorAll('.btn-add-one').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.selectedGiftId = Number(btn.dataset.id);
+        state.selectedGiftName = btn.dataset.name;
+        state.pendingQuantity = 1;
+        document.getElementById('selected-gift-name').textContent = state.selectedGiftName;
+        document.getElementById('deliverer-name-gift').value = state.guestName;
+        showStep('nameGift');
       });
+    });
+
+    // Botão − (cancelar uma unidade)
+    grid.querySelectorAll('.btn-cancel-one').forEach((btn) => {
+      btn.addEventListener('click', () => cancelReservation(Number(btn.dataset.id), btn.dataset.token));
+    });
+
+    // Botão cancelar (item único)
+    grid.querySelectorAll('.btn-cancel').forEach((btn) => {
+      btn.addEventListener('click', () => cancelReservation(Number(btn.dataset.id), btn.dataset.token));
     });
 
     loading.classList.add('hidden');
@@ -223,6 +263,26 @@ async function loadGifts() {
     errorEl.textContent = 'Não foi possível carregar os presentes. Recarregue a página.';
     errorEl.classList.remove('hidden');
   }
+}
+
+async function cancelReservation(giftId, token) {
+  try {
+    const res = await fetch(`/api/gifts/${giftId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionToken: token }),
+    });
+    if (res.ok) {
+      const myData = myReservations[giftId];
+      if (myData) {
+        myData.count = Math.max(0, myData.count - 1);
+        myData.tokens = myData.tokens.filter(t => t !== token);
+        if (myData.count === 0) delete myReservations[giftId];
+      }
+      saveMyReservations();
+      loadGifts();
+    }
+  } catch {}
 }
 
 document.getElementById('btn-other').addEventListener('click', () => {
@@ -250,7 +310,12 @@ document.getElementById('name-gift-form').addEventListener('submit', async (e) =
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao reservar presente.');
 
-    myReservations[state.selectedGiftId] = true;
+    // Salvar localmente
+    if (!myReservations[state.selectedGiftId]) {
+      myReservations[state.selectedGiftId] = { count: 0, tokens: [] };
+    }
+    myReservations[state.selectedGiftId].count += 1;
+    myReservations[state.selectedGiftId].tokens.push(sessionToken);
     saveMyReservations();
 
     showSuccess(delivererName, data.gift.name);
@@ -258,10 +323,7 @@ document.getElementById('name-gift-form').addEventListener('submit', async (e) =
     errorEl.textContent = err.message;
     errorEl.classList.remove('hidden');
     if (err.message.includes('limite') || err.message.includes('já foi escolhido')) {
-      setTimeout(() => {
-        showStep('gifts');
-        loadGifts();
-      }, 2000);
+      setTimeout(() => { showStep('gifts'); loadGifts(); }, 2000);
     }
   } finally {
     submitBtn.disabled = false;
