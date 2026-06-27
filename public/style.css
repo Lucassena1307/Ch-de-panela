@@ -272,15 +272,15 @@ input[type="text"]:focus {
 }
 
 .btn-choose {
-  background: #7a4f3a;
+  background: var(--royal-light);
   color: white;
   padding: 0.55rem 1rem;
   font-size: 0.85rem;
-  box-shadow: 0 2px 8px rgba(122, 79, 58, 0.35);
+  box-shadow: 0 2px 8px rgba(91, 127, 212, 0.35);
 }
 
 .btn-choose:hover {
-  background: #5e3a28;
+  background: var(--royal);
 }
 
 .btn-choose:disabled,
@@ -815,4 +815,17 @@ footer {
 
 .btn-back:hover {
   color: var(--royal);
+}
+
+.success-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.success-actions .btn {
+  flex: 1;
+  min-width: 140px;
 }
