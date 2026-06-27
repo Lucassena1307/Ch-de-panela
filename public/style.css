@@ -272,15 +272,15 @@ input[type="text"]:focus {
 }
 
 .btn-choose {
-  background: var(--royal-light);
+  background: #c45c8a;
   color: white;
   padding: 0.55rem 1rem;
   font-size: 0.85rem;
-  box-shadow: 0 2px 8px rgba(91, 127, 212, 0.35);
+  box-shadow: 0 2px 8px rgba(196, 92, 138, 0.35);
 }
 
 .btn-choose:hover {
-  background: var(--royal);
+  background: #a8476f;
 }
 
 .btn-choose:disabled,
