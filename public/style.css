@@ -7,15 +7,17 @@
 }
 
 :root {
-  --rose: #c45c6a;
-  --rose-light: #e8a0a8;
-  --rose-pale: #fdf0f2;
-  --cream: #fdf8f3;
-  --warm-white: #fffcf9;
-  --brown: #4a3728;
-  --brown-light: #7a6355;
-  --gold: #c9a87c;
-  --shadow: 0 8px 32px rgba(74, 55, 40, 0.12);
+  --royal: #2E4A9E;
+  --royal-light: #5B7FD4;
+  --royal-pale: #EEF2FB;
+  --royal-deep: #1A2F6B;
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --cream: #F8F9FE;
+  --warm-white: #FDFEFF;
+  --brown: #1A1F3A;
+  --brown-light: #4A5480;
+  --shadow: 0 8px 32px rgba(46, 74, 158, 0.14);
   --radius: 16px;
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Outfit', system-ui, sans-serif;
@@ -37,9 +39,9 @@ body {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(196, 92, 106, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(201, 168, 124, 0.1) 0%, transparent 50%),
-    linear-gradient(160deg, #fdf8f3 0%, #f5ebe0 50%, #fdf0f2 100%);
+    radial-gradient(ellipse at 20% 20%, rgba(46, 74, 158, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(201, 168, 76, 0.10) 0%, transparent 50%),
+    linear-gradient(160deg, #F8F9FE 0%, #EEF2FB 50%, #F0F4FF 100%);
   z-index: -1;
 }
 
@@ -68,7 +70,7 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 2.5rem 2rem;
-  border: 1px solid rgba(201, 168, 124, 0.2);
+  border: 1px solid rgba(46, 74, 158, 0.12);
 }
 
 /* Invite */
@@ -78,7 +80,7 @@ body {
 
 .card-header .ornament {
   font-size: 1.5rem;
-  color: var(--rose-light);
+  color: var(--gold);
   display: block;
   margin-bottom: 0.5rem;
 }
@@ -95,7 +97,7 @@ body {
   font-family: var(--font-display);
   font-size: clamp(2.4rem, 8vw, 3.2rem);
   font-weight: 600;
-  color: var(--rose);
+  color: var(--royal);
   line-height: 1.1;
   margin: 0.25rem 0;
 }
@@ -109,7 +111,7 @@ body {
 }
 
 .host-line span {
-  color: var(--brown);
+  color: var(--royal-deep);
   font-weight: 600;
 }
 
@@ -118,7 +120,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   text-align: left;
-  background: var(--rose-pale);
+  background: var(--royal-pale);
   border-radius: 12px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.75rem;
@@ -140,7 +142,7 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--rose);
+  color: var(--royal);
   font-weight: 500;
 }
 
@@ -169,7 +171,7 @@ label {
 input[type="text"] {
   width: 100%;
   padding: 0.85rem 1rem;
-  border: 1.5px solid rgba(201, 168, 124, 0.35);
+  border: 1.5px solid rgba(46, 74, 158, 0.2);
   border-radius: 10px;
   font-family: var(--font-body);
   font-size: 1rem;
@@ -181,8 +183,8 @@ input[type="text"] {
 
 input[type="text"]:focus {
   outline: none;
-  border-color: var(--rose-light);
-  box-shadow: 0 0 0 3px rgba(196, 92, 106, 0.15);
+  border-color: var(--royal-light);
+  box-shadow: 0 0 0 3px rgba(46, 74, 158, 0.12);
 }
 
 .rsvp-question {
@@ -219,37 +221,37 @@ input[type="text"]:focus {
 }
 
 .btn-yes {
-  background: var(--rose);
+  background: var(--royal);
   color: white;
-  box-shadow: 0 4px 14px rgba(196, 92, 106, 0.35);
+  box-shadow: 0 4px 14px rgba(46, 74, 158, 0.35);
 }
 
 .btn-yes:hover {
-  background: #b34d5b;
+  background: var(--royal-deep);
 }
 
 .btn-no {
   background: transparent;
   color: var(--brown-light);
-  border: 1.5px solid rgba(201, 168, 124, 0.4);
+  border: 1.5px solid rgba(46, 74, 158, 0.25);
 }
 
 .btn-no:hover {
-  background: rgba(201, 168, 124, 0.1);
+  background: var(--royal-pale);
 }
 
 .btn-primary {
   width: 100%;
-  background: var(--rose);
+  background: var(--royal);
   color: white;
   padding: 1rem;
   font-size: 1rem;
-  box-shadow: 0 4px 14px rgba(196, 92, 106, 0.3);
+  box-shadow: 0 4px 14px rgba(46, 74, 158, 0.3);
   margin-top: 0.5rem;
 }
 
 .btn-primary:hover {
-  background: #b34d5b;
+  background: var(--royal-deep);
 }
 
 .btn-primary:disabled {
@@ -259,14 +261,14 @@ input[type="text"]:focus {
 
 .btn-outline {
   background: transparent;
-  color: var(--rose);
-  border: 1.5px solid var(--rose-light);
+  color: var(--royal);
+  border: 1.5px solid var(--royal-light);
   padding: 0.6rem 1.2rem;
   white-space: nowrap;
 }
 
 .btn-outline:hover {
-  background: var(--rose-pale);
+  background: var(--royal-pale);
 }
 
 .btn-choose {
@@ -277,7 +279,7 @@ input[type="text"]:focus {
 }
 
 .btn-choose:hover {
-  background: #b8936a;
+  background: #b8933a;
 }
 
 .btn-choose:disabled,
@@ -340,8 +342,8 @@ input[type="text"]:focus {
 
 .step-badge {
   display: inline-block;
-  background: var(--rose-pale);
-  color: var(--rose);
+  background: var(--royal-pale);
+  color: var(--royal);
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.3rem 0.75rem;
@@ -352,7 +354,7 @@ input[type="text"]:focus {
 .gifts-card h2 {
   font-family: var(--font-display);
   font-size: 2rem;
-  color: var(--rose);
+  color: var(--royal);
   margin-bottom: 0.75rem;
 }
 
@@ -376,13 +378,13 @@ input[type="text"]:focus {
   padding: 1rem 1.25rem;
   background: var(--cream);
   border-radius: 12px;
-  border: 1px solid rgba(201, 168, 124, 0.2);
+  border: 1px solid rgba(46, 74, 158, 0.12);
   transition: border-color 0.2s;
 }
 
 .gift-item.reserved {
   opacity: 0.65;
-  background: #f5f0eb;
+  background: #f0f2f8;
 }
 
 .gift-info strong {
@@ -420,12 +422,29 @@ input[type="text"]:focus {
   font-style: italic;
 }
 
-.gift-item.unlimited {
-  border-color: rgba(201, 168, 124, 0.45);
+.gift-full-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #c0392b;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.gift-mine-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--royal);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.gift-item.mine {
+  border-color: rgba(46, 74, 158, 0.4);
+  background: #f0f4ff;
 }
 
 .other-gift-section {
-  border-top: 1px dashed rgba(201, 168, 124, 0.4);
+  border-top: 1px dashed rgba(46, 74, 158, 0.25);
   padding-top: 1.25rem;
 }
 
@@ -435,9 +454,9 @@ input[type="text"]:focus {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem;
-  background: linear-gradient(135deg, var(--rose-pale), #fef9f5);
+  background: linear-gradient(135deg, var(--royal-pale), #f5f8ff);
   border-radius: 12px;
-  border: 1.5px dashed var(--rose-light);
+  border: 1.5px dashed var(--royal-light);
 }
 
 .other-gift-info {
@@ -452,7 +471,7 @@ input[type="text"]:focus {
 
 .other-gift-info strong {
   display: block;
-  color: var(--rose);
+  color: var(--royal);
 }
 
 .other-gift-info p {
@@ -464,7 +483,7 @@ input[type="text"]:focus {
 .name-card h2 {
   font-family: var(--font-display);
   font-size: 1.75rem;
-  color: var(--rose);
+  color: var(--royal);
   margin-bottom: 0.5rem;
 }
 
@@ -477,7 +496,7 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: var(--rose-pale);
+  background: var(--royal-pale);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -511,12 +530,12 @@ input[type="text"]:focus {
 .success-card h2 {
   font-family: var(--font-display);
   font-size: 2rem;
-  color: var(--rose);
+  color: var(--royal);
   margin-bottom: 0.75rem;
 }
 
 .success-details {
-  background: var(--rose-pale);
+  background: var(--royal-pale);
   border-radius: 12px;
   padding: 1.25rem;
   margin: 1.5rem 0;
@@ -535,6 +554,26 @@ input[type="text"]:focus {
 .success-note {
   color: var(--brown-light);
   font-style: italic;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #c0392b;
+  border: 1.5px solid #e57373;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-cancel:hover {
+  background: #fff0f0;
+}
+
+.btn-disabled {
+  background: #e8e0d8 !important;
+  color: #a09080 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
 }
 
 footer {
@@ -565,45 +604,4 @@ footer {
   .other-gift-card .btn {
     width: 100%;
   }
-}
-
-.gift-mine-label {
-  display: block;
-  font-size: 0.78rem;
-  color: #4caf50;
-  margin-top: 0.25rem;
-  font-weight: 500;
-}
-
-.gift-full-label {
-  display: block;
-  font-size: 0.75rem;
-  color: #c0392b;
-  margin-top: 0.25rem;
-  font-style: italic;
-}
-
-.gift-item.mine {
-  border-color: rgba(76, 175, 80, 0.4);
-  background: #f6fff6;
-}
-
-.btn-cancel {
-  background: transparent;
-  color: #c0392b;
-  border: 1.5px solid #e57373;
-  padding: 0.55rem 1rem;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.btn-cancel:hover {
-  background: #fff0f0;
-}
-
-.btn-disabled {
-  background: #e8e0d8 !important;
-  color: #a09080 !important;
-  cursor: not-allowed !important;
-  box-shadow: none !important;
 }
