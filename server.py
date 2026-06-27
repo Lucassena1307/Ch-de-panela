@@ -454,6 +454,55 @@ def api_summary():
     })
 
 
+
+@app.route("/api/finish", methods=["POST"])
+def api_finish():
+    data = request.get_json(silent=True) or {}
+    guest_name = (data.get("guestName") or "").strip()
+    session_token = (data.get("sessionToken") or "").strip()
+
+    conn = get_db()
+    # Buscar presentes escolhidos por este convidado nesta sessão
+    reservations = conn.execute("""
+        SELECT g.name FROM gift_reservations gr
+        JOIN gifts g ON g.id = gr.gift_id
+        WHERE gr.session_token = ?
+        ORDER BY gr.reserved_at ASC
+    """, (session_token,)).fetchall()
+
+    single_gifts = conn.execute("""
+        SELECT name, custom_description, is_custom FROM gifts
+        WHERE reserved_by = ? AND session_token IS NULL
+    """, (guest_name,)).fetchall() if guest_name else []
+
+    conn.close()
+
+    gift_list = [r["name"] for r in reservations]
+
+    if not gift_list:
+        return jsonify({"success": True})
+
+    items_html = "".join(f"<li>🎁 {g}</li>" for g in gift_list)
+
+    html = f"""
+    <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #1A1F3A;">
+      <h2 style="color: #2E4A9E;">Chá de Panela — Resumo final do convidado</h2>
+      <p><strong>{guest_name or 'Convidado'}</strong> finalizou a escolha de presentes:</p>
+      <ul style="margin: 1rem 0; padding-left: 1.5rem; line-height: 2;">
+        {items_html}
+      </ul>
+      <hr style="border: none; border-top: 1px solid #dce4f5; margin: 24px 0;">
+      <p style="color: #4A5480; font-size: 0.9rem;">Este resumo foi enviado ao clicar em "Enviar" no convite.</p>
+    </div>
+    """
+
+    try:
+        _send_email(f"✦ {guest_name} finalizou os presentes", html)
+    except Exception as exc:
+        print(f"Erro ao enviar e-mail de finalização: {exc}")
+
+    return jsonify({"success": True})
+
 if __name__ == "__main__":
     init_db()
     port = int(os.getenv("PORT", "3000"))
