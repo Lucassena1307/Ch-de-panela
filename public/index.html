@@ -41,7 +41,7 @@
 
         <form id="rsvp-form" class="rsvp-form">
           <label for="guest-name">Seu nome</label>
-          <input type="text" id="guest-name" placeholder="Como você gostaria de ser chamado(a)?" required minlength="2" autocomplete="name">
+          <input type="text" id="guest-name" placeholder="Como você gostaria de ser chamado(a)?" required minlength="2" autocomplete="off">
 
           <p class="rsvp-question">Você irá ao chá de panela?</p>
           <div class="rsvp-buttons">
@@ -117,7 +117,7 @@
           <input type="text" id="other-description" placeholder="Ex: Conjunto de toalhas de cozinha" required minlength="2">
 
           <label for="deliverer-name-other">Nome de quem entregará</label>
-          <input type="text" id="deliverer-name-other" placeholder="Seu nome completo" required minlength="2" autocomplete="name">
+          <input type="text" id="deliverer-name-other" placeholder="Seu nome completo" required minlength="2" autocomplete="off">
 
           <p id="other-error" class="error-msg hidden"></p>
           <button type="submit" class="btn btn-primary">✦ Confirmar presente</button>
@@ -152,7 +152,7 @@
       <h3 id="modal-gift-name"></h3>
       <div class="modal-form">
         <label for="modal-deliverer-name">Quem vai entregar?</label>
-        <input type="text" id="modal-deliverer-name" placeholder="Seu nome completo" autocomplete="name">
+        <input type="text" id="modal-deliverer-name" placeholder="Seu nome completo" autocomplete="off">
         <p id="modal-error" class="error-msg hidden"></p>
         <button class="btn btn-primary btn-confirm" id="modal-confirm-btn">
           ✦ Confirmar presente
