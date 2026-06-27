@@ -5,9 +5,7 @@ if (!sessionToken) {
   localStorage.setItem('sessionToken', sessionToken);
 }
 
-// Reservas feitas neste dispositivo: { giftId: { count, tokens: [] } }
 let myReservations = JSON.parse(localStorage.getItem('myReservations') || '{}');
-
 function saveMyReservations() {
   localStorage.setItem('myReservations', JSON.stringify(myReservations));
 }
@@ -16,14 +14,12 @@ const state = {
   guestName: '',
   selectedGiftId: null,
   selectedGiftName: '',
-  pendingQuantity: 1,
 };
 
 const steps = {
   invite: document.getElementById('step-invite'),
   decline: document.getElementById('step-decline'),
   gifts: document.getElementById('step-gifts'),
-  nameGift: document.getElementById('step-name-gift'),
   other: document.getElementById('step-other'),
   success: document.getElementById('step-success'),
 };
@@ -33,6 +29,79 @@ function showStep(stepKey) {
   steps[stepKey].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// Modal
+const modalOverlay = document.getElementById('gift-modal-overlay');
+const modalGiftName = document.getElementById('modal-gift-name');
+const modalDelivererName = document.getElementById('modal-deliverer-name');
+const modalError = document.getElementById('modal-error');
+const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+
+function openModal(giftId, giftName) {
+  state.selectedGiftId = giftId;
+  state.selectedGiftName = giftName;
+  modalGiftName.textContent = giftName;
+  modalDelivererName.value = state.guestName;
+  modalError.classList.add('hidden');
+  modalConfirmBtn.disabled = false;
+  modalConfirmBtn.textContent = '✦ Confirmar presente';
+  modalOverlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => modalDelivererName.focus(), 100);
+}
+
+function closeModal() {
+  modalOverlay.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => {
+  if (e.target === modalOverlay) closeModal();
+});
+
+modalConfirmBtn.addEventListener('click', async () => {
+  const delivererName = modalDelivererName.value.trim();
+  modalError.classList.add('hidden');
+
+  if (delivererName.length < 2) {
+    modalError.textContent = 'Por favor, informe seu nome.';
+    modalError.classList.remove('hidden');
+    return;
+  }
+
+  modalConfirmBtn.disabled = true;
+  modalConfirmBtn.textContent = 'Confirmando...';
+
+  try {
+    const res = await fetch(`/api/gifts/${state.selectedGiftId}/reserve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delivererName, sessionToken }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao reservar presente.');
+
+    if (!myReservations[state.selectedGiftId]) {
+      myReservations[state.selectedGiftId] = { count: 0, tokens: [] };
+    }
+    myReservations[state.selectedGiftId].count += 1;
+    myReservations[state.selectedGiftId].tokens.push(sessionToken);
+    saveMyReservations();
+
+    closeModal();
+    showSuccess(delivererName, data.gift.name);
+  } catch (err) {
+    modalError.textContent = err.message;
+    modalError.classList.remove('hidden');
+    modalConfirmBtn.disabled = false;
+    modalConfirmBtn.textContent = '✦ Confirmar presente';
+    if (err.message.includes('limite') || err.message.includes('já foi escolhido')) {
+      setTimeout(() => { closeModal(); loadGifts(); }, 2000);
+    }
+  }
+});
 
 async function loadEvent() {
   try {
@@ -50,7 +119,6 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach((btn) => {
     const guestName = document.getElementById('guest-name').value.trim();
     const attending = btn.dataset.attending === 'true';
     const errorEl = document.getElementById('rsvp-error');
-
     errorEl.classList.add('hidden');
 
     if (guestName.length < 2) {
@@ -61,19 +129,15 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach((btn) => {
     }
 
     btn.disabled = true;
-
     try {
       const res = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guestName, attending }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao registrar resposta.');
-
       state.guestName = guestName;
-
       if (attending) {
         document.getElementById('gifts-guest-name').textContent = guestName;
         showStep('gifts');
@@ -96,10 +160,9 @@ function renderGiftItem(gift) {
   const myCount = myData ? myData.count : 0;
   const isMultiple = gift.maxReservations > 1;
   const isFull = gift.full;
+  const remaining = gift.maxReservations - gift.reservationCount;
 
-  // Item de vaga única
   if (!isMultiple) {
-    // Eu escolhi neste dispositivo
     if (myCount > 0) {
       return `
         <div class="gift-item gift-mine">
@@ -108,12 +171,9 @@ function renderGiftItem(gift) {
             <span class="gift-category">${escapeHtml(gift.category)}</span>
             <span class="gift-mine-label">✓ Você escolheu este</span>
           </div>
-          <button class="btn btn-cancel" data-id="${gift.id}" data-token="${myData.tokens[0]}">
-            Cancelar
-          </button>
+          <button class="btn btn-cancel" data-id="${gift.id}" data-token="${myData.tokens[0]}">Cancelar</button>
         </div>`;
     }
-    // Já escolhido por outro
     if (gift.reserved) {
       return `
         <div class="gift-item gift-taken">
@@ -124,44 +184,36 @@ function renderGiftItem(gift) {
           </div>
         </div>`;
     }
-    // Disponível
     return `
       <div class="gift-item">
         <div class="gift-info">
           <strong>${escapeHtml(gift.name)}</strong>
           <span class="gift-category">${escapeHtml(gift.category)}</span>
         </div>
-        <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">
-          Escolher
-        </button>
+        <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">Escolher</button>
       </div>`;
   }
 
-  // Item de múltiplas vagas
-  const remaining = gift.maxReservations - gift.reservationCount;
-
-  // Tenho reservas neste dispositivo
+  // Múltiplas vagas
   if (myCount > 0) {
-    const canAddMore = !isFull && myCount < gift.maxReservations;
+    const canAdd = !isFull;
     return `
-      <div class="gift-item gift-mine gift-multiple">
+      <div class="gift-item gift-mine">
         <div class="gift-info">
           <strong>${escapeHtml(gift.name)}</strong>
           <span class="gift-category">${escapeHtml(gift.category)}</span>
           <span class="gift-mine-label">✓ Você escolheu ${myCount}x</span>
-          ${!isFull ? `<span class="gift-slots-label">${remaining} vaga(s) restante(s)</span>` : '<span class="gift-full-label">Esgotado</span>'}
+          ${isFull ? '<span class="gift-full-label">Esgotado</span>' : `<span class="gift-slots-label">${remaining} vaga(s) restante(s)</span>`}
         </div>
         <div class="gift-counter-group">
           <button class="btn btn-counter btn-cancel-one" data-id="${gift.id}" data-token="${myData.tokens[myData.tokens.length - 1]}">−</button>
           <span class="gift-counter-num">${myCount}</span>
-          <button class="btn btn-counter btn-add-one ${!canAddMore ? 'btn-counter-disabled' : ''}"
-            data-id="${gift.id}" data-name="${escapeHtml(gift.name)}"
-            ${!canAddMore ? 'disabled' : ''}>+</button>
+          <button class="btn btn-counter btn-add-one ${!canAdd ? 'btn-counter-disabled' : ''}"
+            data-id="${gift.id}" data-name="${escapeHtml(gift.name)}" ${!canAdd ? 'disabled' : ''}>+</button>
         </div>
       </div>`;
   }
 
-  // Esgotado sem minhas reservas
   if (isFull) {
     return `
       <div class="gift-item gift-taken">
@@ -173,17 +225,14 @@ function renderGiftItem(gift) {
       </div>`;
   }
 
-  // Disponível com vagas
   return `
-    <div class="gift-item gift-multiple">
+    <div class="gift-item">
       <div class="gift-info">
         <strong>${escapeHtml(gift.name)}</strong>
         <span class="gift-category">${escapeHtml(gift.category)}</span>
         <span class="gift-slots-label">${remaining} vaga(s) disponível(is)</span>
       </div>
-      <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">
-        Escolher
-      </button>
+      <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">Escolher</button>
     </div>`;
 }
 
@@ -198,61 +247,29 @@ async function loadGifts() {
 
   try {
     const res = await fetch('/api/gifts');
-    const text = await res.text();
-    const gifts = text ? JSON.parse(text) : [];
-    if (!res.ok) throw new Error(gifts.error || 'Erro ao carregar presentes.');
+    const gifts = res.ok ? await res.json() : [];
 
-    // Sincronizar myReservations com tokens da sessão vindos do servidor
     gifts.forEach(g => {
       const myTokens = (g.sessionTokens || []).filter(t => t === sessionToken);
       if (myTokens.length > 0) {
-        myReservations[g.id] = {
-          count: myTokens.length,
-          tokens: myTokens,
-        };
-      } else if (myReservations[g.id]) {
-        // Limpar se o servidor não reconhece mais
+        myReservations[g.id] = { count: myTokens.length, tokens: myTokens };
+      } else {
         delete myReservations[g.id];
       }
     });
     saveMyReservations();
 
-    grid.innerHTML = gifts
-      .filter((g) => !g.isCustom)
-      .map(renderGiftItem)
-      .join('');
+    grid.innerHTML = gifts.filter(g => !g.isCustom).map(renderGiftItem).join('');
 
-    // Botão escolher (único ou primeira vez múltiplo)
-    grid.querySelectorAll('.btn-choose').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.selectedGiftId = Number(btn.dataset.id);
-        state.selectedGiftName = btn.dataset.name;
-        state.pendingQuantity = 1;
-        document.getElementById('selected-gift-name').textContent = state.selectedGiftName;
-        document.getElementById('deliverer-name-gift').value = state.guestName;
-        showStep('nameGift');
-      });
+    grid.querySelectorAll('.btn-choose').forEach(btn => {
+      btn.addEventListener('click', () => openModal(Number(btn.dataset.id), btn.dataset.name));
     });
 
-    // Botão + (adicionar mais uma unidade)
-    grid.querySelectorAll('.btn-add-one').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.selectedGiftId = Number(btn.dataset.id);
-        state.selectedGiftName = btn.dataset.name;
-        state.pendingQuantity = 1;
-        document.getElementById('selected-gift-name').textContent = state.selectedGiftName;
-        document.getElementById('deliverer-name-gift').value = state.guestName;
-        showStep('nameGift');
-      });
+    grid.querySelectorAll('.btn-add-one').forEach(btn => {
+      btn.addEventListener('click', () => openModal(Number(btn.dataset.id), btn.dataset.name));
     });
 
-    // Botão − (cancelar uma unidade)
-    grid.querySelectorAll('.btn-cancel-one').forEach((btn) => {
-      btn.addEventListener('click', () => cancelReservation(Number(btn.dataset.id), btn.dataset.token));
-    });
-
-    // Botão cancelar (item único)
-    grid.querySelectorAll('.btn-cancel').forEach((btn) => {
+    grid.querySelectorAll('.btn-cancel-one, .btn-cancel').forEach(btn => {
       btn.addEventListener('click', () => cancelReservation(Number(btn.dataset.id), btn.dataset.token));
     });
 
@@ -291,43 +308,10 @@ document.getElementById('btn-other').addEventListener('click', () => {
   showStep('other');
 });
 
-document.getElementById('name-gift-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const delivererName = document.getElementById('deliverer-name-gift').value.trim();
-  const errorEl = document.getElementById('name-gift-error');
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-
-  errorEl.classList.add('hidden');
-  submitBtn.disabled = true;
-
-  try {
-    const res = await fetch(`/api/gifts/${state.selectedGiftId}/reserve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delivererName, sessionToken }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Erro ao reservar presente.');
-
-    // Salvar localmente
-    if (!myReservations[state.selectedGiftId]) {
-      myReservations[state.selectedGiftId] = { count: 0, tokens: [] };
-    }
-    myReservations[state.selectedGiftId].count += 1;
-    myReservations[state.selectedGiftId].tokens.push(sessionToken);
-    saveMyReservations();
-
-    showSuccess(delivererName, data.gift.name);
-  } catch (err) {
-    errorEl.textContent = err.message;
-    errorEl.classList.remove('hidden');
-    if (err.message.includes('limite') || err.message.includes('já foi escolhido')) {
-      setTimeout(() => { showStep('gifts'); loadGifts(); }, 2000);
-    }
-  } finally {
-    submitBtn.disabled = false;
-  }
+document.getElementById('btn-back-other').addEventListener('click', () => showStep('gifts'));
+document.getElementById('btn-back-to-gifts').addEventListener('click', () => {
+  showStep('gifts');
+  loadGifts();
 });
 
 document.getElementById('other-form').addEventListener('submit', async (e) => {
@@ -346,10 +330,8 @@ document.getElementById('other-form').addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ delivererName, description }),
     });
-
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao registrar presente.');
-
     showSuccess(delivererName, data.gift.name);
   } catch (err) {
     errorEl.textContent = err.message;
