@@ -314,6 +314,27 @@ document.getElementById('btn-back-to-gifts').addEventListener('click', () => {
   loadGifts();
 });
 
+document.getElementById('btn-finish').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-finish');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    await fetch('/api/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guestName: state.guestName, sessionToken }),
+    });
+  } catch {}
+
+  btn.textContent = 'Enviado ✓';
+  setTimeout(() => {
+    showStep('invite');
+    document.getElementById('guest-name').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 1000);
+});
+
 document.getElementById('other-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const description = document.getElementById('other-description').value.trim();
