@@ -203,7 +203,7 @@ function renderGiftItem(gift) {
           <strong>${escapeHtml(gift.name)}</strong>
           <span class="gift-category">${escapeHtml(gift.category)}</span>
           <span class="gift-mine-label">✓ Você escolheu ${myCount}x</span>
-          ${isFull ? '<span class="gift-full-label">Esgotado</span>' : `<span class="gift-slots-label">${remaining} vaga(s) restante(s)</span>`}
+          ${isFull ? '<span class="gift-full-label">Esgotado</span>' : `<span class="gift-slots-label">${remaining} item(ns) restante(s)</span>`}
         </div>
         <div class="gift-counter-group">
           <button class="btn btn-counter btn-cancel-one" data-id="${gift.id}" data-token="${myData.tokens[myData.tokens.length - 1]}">−</button>
@@ -230,7 +230,7 @@ function renderGiftItem(gift) {
       <div class="gift-info">
         <strong>${escapeHtml(gift.name)}</strong>
         <span class="gift-category">${escapeHtml(gift.category)}</span>
-        <span class="gift-slots-label">${remaining} vaga(s) disponível(is)</span>
+        <span class="gift-slots-label">${remaining} item(ns) disponível(is)</span>
       </div>
       <button class="btn btn-choose" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">Escolher</button>
     </div>`;
