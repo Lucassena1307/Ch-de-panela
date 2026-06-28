@@ -904,3 +904,37 @@ footer {
   flex: 1;
   min-width: 140px;
 }
+
+/* Efeito de elementos flutuantes no fundo */
+.floating-elements {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.float-el {
+  position: absolute;
+  opacity: 0;
+  animation: floatDown linear infinite;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+@keyframes floatDown {
+  0%   { transform: translateY(-60px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.18; }
+  90%  { opacity: 0.12; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+}
+
+footer {
+  position: relative;
+  z-index: 1;
+}
