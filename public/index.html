@@ -14,7 +14,7 @@
 
   <main class="container">
 
-    <!-- Etapa 1: Convite -->
+    <!-- Aba 1: Convite -->
     <section id="step-invite" class="step active">
       <div class="card invite-card">
         <div class="card-header">
@@ -49,9 +49,10 @@
       </div>
     </section>
 
-    <!-- Etapa 2a: Não vai -->
+    <!-- Aba 2a: Não vai -->
     <section id="step-decline" class="step">
       <div class="card message-card">
+        <button type="button" class="btn-back" id="btn-back-decline">← Voltar</button>
         <div class="message-icon">🤍</div>
         <h2>Entendemos e obrigado por responder</h2>
         <p>Sua resposta foi registrada com carinho. Sentiremos sua falta, mas respeitamos sua decisão.</p>
@@ -59,9 +60,10 @@
       </div>
     </section>
 
-    <!-- Etapa 2b: Lista de presentes -->
+    <!-- Aba 2b: Lista de presentes -->
     <section id="step-gifts" class="step">
       <div class="card gifts-card">
+        <button type="button" class="btn-back" id="btn-back-gifts">← Voltar</button>
         <div class="step-nav"><span class="step-badge">Escolha seus presentes</span></div>
         <h2>Lista de Presentes</h2>
         <p class="gifts-intro">
@@ -86,9 +88,10 @@
       </div>
     </section>
 
-    <!-- Etapa 3: Confirmação dos selecionados -->
+    <!-- Aba 3: Confirmação -->
     <section id="step-confirm" class="step">
       <div class="card name-card">
+        <button type="button" class="btn-back" id="btn-back-confirm">← Voltar</button>
         <div class="step-nav"><span class="step-badge">Confirmação</span></div>
         <div class="selected-gift-preview">
           <span>🎁</span>
@@ -97,10 +100,10 @@
             <ul id="confirm-list" class="confirm-list"></ul>
           </div>
         </div>
-        <h2>Quem vai entregar?</h2>
-        <p>Informe o nome de quem estará entregando os presentes no dia.</p>
+        <h2>Confirme seus dados</h2>
+        <p>Verifique seu nome antes de enviar.</p>
         <form id="confirm-form">
-          <label for="confirm-deliverer-name">Nome completo</label>
+          <label for="confirm-deliverer-name">Nome de quem entregará</label>
           <input type="text" id="confirm-deliverer-name" placeholder="Seu nome completo" required minlength="2" autocomplete="off">
           <p id="confirm-error" class="error-msg hidden"></p>
           <button type="submit" class="btn btn-primary">✦ Confirmar e enviar</button>
@@ -108,12 +111,10 @@
       </div>
     </section>
 
-    <!-- Etapa 4: Outros presentes -->
+    <!-- Aba 4: Outros presentes -->
     <section id="step-other" class="step">
       <div class="card name-card">
-        <div class="step-nav">
-          <button type="button" class="btn-back" id="btn-back-other">← Voltar</button>
-        </div>
+        <button type="button" class="btn-back" id="btn-back-other">← Voltar</button>
         <div class="selected-gift-preview other">
           <span>🎀</span>
           <p>Presente personalizado</p>
@@ -131,7 +132,7 @@
       </div>
     </section>
 
-    <!-- Etapa 5: Sucesso -->
+    <!-- Aba 5: Sucesso -->
     <section id="step-success" class="step">
       <div class="card success-card">
         <div class="success-icon">✨</div>
@@ -151,7 +152,7 @@
 
   </main>
 
-  <!-- Barra flutuante de continuar -->
+  <!-- Barra flutuante — só aparece na aba de presentes -->
   <div id="continue-bar" class="continue-bar hidden">
     <span id="continue-count"></span>
     <button class="btn btn-continue-action" id="btn-continue">Continuar →</button>
