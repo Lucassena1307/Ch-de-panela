@@ -1,19 +1,15 @@
-// Token de sessão único por dispositivo
 let sessionToken = localStorage.getItem('sessionToken');
 if (!sessionToken) {
   sessionToken = crypto.randomUUID();
   localStorage.setItem('sessionToken', sessionToken);
 }
 
-// Reservas já confirmadas no servidor: { giftId: { count, tokens[] } }
 let myReservations = JSON.parse(localStorage.getItem('myReservations') || '{}');
 function saveMyReservations() {
   localStorage.setItem('myReservations', JSON.stringify(myReservations));
 }
 
-// Seleções pendentes (ainda não enviadas): { giftId: { name, count } }
 let pendingSelections = {};
-
 const state = { guestName: '' };
 
 const steps = {
@@ -25,11 +21,28 @@ const steps = {
   success: document.getElementById('step-success'),
 };
 
+const continueBar = document.getElementById('continue-bar');
+
 function showStep(stepKey) {
   Object.values(steps).forEach(el => el.classList.remove('active'));
   steps[stepKey].classList.add('active');
+  // Barra só aparece na aba de presentes
+  if (stepKey !== 'gifts') continueBar.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* ── Botões Voltar ── */
+document.getElementById('btn-back-decline').addEventListener('click', () => showStep('invite'));
+document.getElementById('btn-back-gifts').addEventListener('click', () => showStep('invite'));
+document.getElementById('btn-back-confirm').addEventListener('click', () => {
+  showStep('gifts');
+  updateContinueBar();
+});
+document.getElementById('btn-back-other').addEventListener('click', () => showStep('gifts'));
+document.getElementById('btn-back-to-gifts').addEventListener('click', () => {
+  showStep('gifts');
+  loadGifts();
+});
 
 /* ── RSVP ── */
 document.querySelectorAll('.rsvp-buttons .btn').forEach(btn => {
@@ -57,6 +70,7 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach(btn => {
       if (!res.ok) throw new Error(data.error || 'Erro ao registrar.');
 
       state.guestName = guestName;
+
       if (attending) {
         document.getElementById('gifts-guest-name').textContent = guestName;
         pendingSelections = {};
@@ -75,7 +89,7 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach(btn => {
   });
 });
 
-/* ── RENDER GIFT ITEM ── */
+/* ── RENDER ── */
 function renderGiftItem(gift) {
   const myConfirmed = myReservations[gift.id]?.count || 0;
   const myPending   = pendingSelections[gift.id]?.count || 0;
@@ -84,9 +98,7 @@ function renderGiftItem(gift) {
   const isFull      = gift.full;
   const remaining   = gift.maxReservations - gift.reservationCount;
 
-  /* ── Item de vaga única ── */
   if (!isMultiple) {
-    // Já confirmei neste dispositivo
     if (myConfirmed > 0) {
       return `
         <div class="gift-item gift-mine">
@@ -98,7 +110,6 @@ function renderGiftItem(gift) {
           <button class="btn btn-cancel" data-id="${gift.id}" data-token="${myReservations[gift.id].tokens[0]}">Cancelar</button>
         </div>`;
     }
-    // Já foi escolhido por outro
     if (gift.reserved) {
       return `
         <div class="gift-item gift-taken">
@@ -109,7 +120,6 @@ function renderGiftItem(gift) {
           </div>
         </div>`;
     }
-    // Disponível
     return `
       <div class="gift-item">
         <div class="gift-info">
@@ -120,10 +130,9 @@ function renderGiftItem(gift) {
       </div>`;
   }
 
-  /* ── Item de múltiplas vagas ── */
-  const canAdd = remaining - myPending > 0 && !isFull;
+  // Múltiplas vagas
+  const canAdd = (remaining - myPending) > 0 && !isFull;
 
-  // Tenho pendentes ou confirmados
   if (totalMine > 0) {
     const slotsLeft = remaining - myPending;
     return `
@@ -131,12 +140,12 @@ function renderGiftItem(gift) {
         <div class="gift-info">
           <strong>${escapeHtml(gift.name)}</strong>
           <span class="gift-category">${escapeHtml(gift.category)}</span>
-          ${myPending > 0 ? `<span class="gift-pending-label">+ ${myPending} na seleção</span>` : ''}
-          ${myConfirmed > 0 ? `<span class="gift-mine-label">✓ ${myConfirmed}x já confirmado(s)</span>` : ''}
+          ${myPending > 0 ? `<span class="gift-pending-label">+ ${myPending} selecionado(s)</span>` : ''}
+          ${myConfirmed > 0 ? `<span class="gift-mine-label">✓ ${myConfirmed}x confirmado(s)</span>` : ''}
           ${isFull && myPending === 0 ? '<span class="gift-full-label">Esgotado</span>' : slotsLeft > 0 ? `<span class="gift-slots-label">${slotsLeft} item(ns) restante(s)</span>` : ''}
         </div>
         <div class="gift-counter-group">
-          <button class="btn btn-counter btn-minus" data-id="${gift.id}" data-name="${escapeHtml(gift.name)}">−</button>
+          <button class="btn btn-counter btn-minus" data-id="${gift.id}">−</button>
           <span class="gift-counter-num">${totalMine}</span>
           <button class="btn btn-counter btn-plus ${!canAdd ? 'btn-counter-disabled' : ''}"
             data-id="${gift.id}" data-name="${escapeHtml(gift.name)}" ${!canAdd ? 'disabled' : ''}>+</button>
@@ -144,7 +153,6 @@ function renderGiftItem(gift) {
       </div>`;
   }
 
-  // Esgotado
   if (isFull) {
     return `
       <div class="gift-item gift-taken">
@@ -156,7 +164,6 @@ function renderGiftItem(gift) {
       </div>`;
   }
 
-  // Disponível — botão Escolher inicia o contador
   return `
     <div class="gift-item">
       <div class="gift-info">
@@ -168,7 +175,8 @@ function renderGiftItem(gift) {
     </div>`;
 }
 
-/* ── LOAD GIFTS ── */
+let cachedGifts = [];
+
 async function loadGifts() {
   const loading = document.getElementById('gifts-loading');
   const grid    = document.getElementById('gifts-grid');
@@ -180,23 +188,20 @@ async function loadGifts() {
 
   try {
     const res   = await fetch('/api/gifts');
-    const gifts = res.ok ? await res.json() : [];
+    cachedGifts = res.ok ? await res.json() : [];
 
-    // Sincronizar confirmados com servidor
-    gifts.forEach(g => {
+    cachedGifts.forEach(g => {
       const myTokens = (g.sessionTokens || []).filter(t => t === sessionToken);
       if (myTokens.length > 0) {
-        myReservations[g.id] = { count: myTokens.length, tokens: myTokens };
+        myReservations[g.id] = { count: myTokens.length, tokens: myTokens, name: g.name };
       } else {
         delete myReservations[g.id];
       }
     });
     saveMyReservations();
 
-    grid.innerHTML = gifts.filter(g => !g.isCustom).map(renderGiftItem).join('');
-    attachGridListeners(gifts);
+    renderGrid();
     updateContinueBar();
-
     loading.classList.add('hidden');
     grid.classList.remove('hidden');
   } catch {
@@ -206,88 +211,73 @@ async function loadGifts() {
   }
 }
 
-function attachGridListeners(gifts) {
-  // Escolher (primeira vez em item múltiplo ou único)
+function renderGrid() {
+  const grid = document.getElementById('gifts-grid');
+  grid.innerHTML = cachedGifts.filter(g => !g.isCustom).map(renderGiftItem).join('');
+  attachGridListeners();
+}
+
+function attachGridListeners() {
   document.querySelectorAll('.btn-choose').forEach(btn => {
     btn.addEventListener('click', () => {
       const id   = Number(btn.dataset.id);
       const name = btn.dataset.name;
-      const gift = gifts.find(g => g.id === id);
+      const gift = cachedGifts.find(g => g.id === id);
       if (!gift) return;
 
       if (gift.maxReservations === 1) {
-        // Item único: vai direto para confirmação
-        pendingSelections = {};
-        pendingSelections[id] = { name, count: 1 };
+        // Item único: vai direto para confirmação com só esse item
+        pendingSelections = { [id]: { name, count: 1 } };
         goToConfirm();
       } else {
-        // Item múltiplo: inicia contador pendente
         if (!pendingSelections[id]) pendingSelections[id] = { name, count: 0 };
         pendingSelections[id].count += 1;
-        reRenderItem(gifts, id);
+        renderGrid();
         updateContinueBar();
       }
     });
   });
 
-  // Botão +
   document.querySelectorAll('.btn-plus').forEach(btn => {
     btn.addEventListener('click', () => {
       const id   = Number(btn.dataset.id);
       const name = btn.dataset.name;
       if (!pendingSelections[id]) pendingSelections[id] = { name, count: 0 };
       pendingSelections[id].count += 1;
-      reRenderItem(gifts, id);
+      renderGrid();
       updateContinueBar();
     });
   });
 
-  // Botão −
   document.querySelectorAll('.btn-minus').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
-      if (pendingSelections[id] && pendingSelections[id].count > 0) {
+      if (pendingSelections[id]?.count > 0) {
         pendingSelections[id].count -= 1;
         if (pendingSelections[id].count === 0) delete pendingSelections[id];
-        reRenderItem(gifts, id);
+        renderGrid();
         updateContinueBar();
       } else if (myReservations[id]) {
-        // Cancela o último confirmado
         const token = myReservations[id].tokens[myReservations[id].tokens.length - 1];
         cancelReservation(id, token);
       }
     });
   });
 
-  // Cancelar (item único)
   document.querySelectorAll('.btn-cancel').forEach(btn => {
     btn.addEventListener('click', () => cancelReservation(Number(btn.dataset.id), btn.dataset.token));
   });
 }
 
-function reRenderItem(gifts, id) {
-  const gift = gifts.find(g => g.id === id);
-  if (!gift) return;
-  const el = document.querySelector(`.gift-item[data-id="${id}"], .gift-item.gift-mine[data-id="${id}"]`);
-  const wrapper = document.querySelector(`[data-id="${id}"]`)?.closest('.gift-item') ||
-    document.querySelector(`.gift-item:has([data-id="${id}"])`);
-
-  // Re-renderizar toda a grid para simplicidade
-  const grid = document.getElementById('gifts-grid');
-  grid.innerHTML = gifts.filter(g => !g.isCustom).map(renderGiftItem).join('');
-  attachGridListeners(gifts);
-}
-
 /* ── BARRA CONTINUAR ── */
 function updateContinueBar() {
-  const bar   = document.getElementById('continue-bar');
   const count = Object.values(pendingSelections).reduce((s, v) => s + v.count, 0);
   if (count > 0) {
-    bar.classList.remove('hidden');
+    continueBar.classList.remove('hidden');
     document.getElementById('continue-count').textContent =
       count === 1 ? '1 item selecionado' : `${count} itens selecionados`;
   } else {
-    bar.classList.add('hidden');
+    continueBar.classList.add('hidden');
   }
 }
 
@@ -295,24 +285,15 @@ document.getElementById('btn-continue').addEventListener('click', goToConfirm);
 
 function goToConfirm() {
   const list = document.getElementById('confirm-list');
-  const allItems = { ...pendingSelections };
-
-  // Incluir também itens já confirmados desta sessão que o usuário vê
-  Object.entries(myReservations).forEach(([id, data]) => {
-    if (!allItems[id]) allItems[id] = { name: data.name || '—', count: data.count };
-  });
-
-  if (Object.keys(allItems).length === 0) return;
-
-  list.innerHTML = Object.entries(allItems).map(([id, item]) =>
+  list.innerHTML = Object.values(pendingSelections).map(item =>
     `<li><strong>${item.count}×</strong> ${escapeHtml(item.name)}</li>`
   ).join('');
-
+  // Preencher nome automaticamente
   document.getElementById('confirm-deliverer-name').value = state.guestName;
   showStep('confirm');
 }
 
-/* ── CONFIRMAÇÃO FINAL ── */
+/* ── CONFIRMAÇÃO ── */
 document.getElementById('confirm-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const delivererName = document.getElementById('confirm-deliverer-name').value.trim();
@@ -329,13 +310,13 @@ document.getElementById('confirm-form').addEventListener('submit', async (e) => 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Enviando...';
 
-  let allGiftNames = [];
+  const allGiftNames = [];
   let failed = false;
 
   for (const [id, item] of Object.entries(pendingSelections)) {
     for (let i = 0; i < item.count; i++) {
       try {
-        const res = await fetch(`/api/gifts/${id}/reserve`, {
+        const res  = await fetch(`/api/gifts/${id}/reserve`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ delivererName, sessionToken }),
@@ -361,8 +342,6 @@ document.getElementById('confirm-form').addEventListener('submit', async (e) => 
 
   if (!failed) {
     pendingSelections = {};
-
-    // Enviar e-mail de resumo
     try {
       await fetch('/api/finish', {
         method: 'POST',
@@ -370,7 +349,6 @@ document.getElementById('confirm-form').addEventListener('submit', async (e) => 
         body: JSON.stringify({ guestName: delivererName, sessionToken }),
       });
     } catch {}
-
     showSuccess(delivererName, allGiftNames.join(', '));
   }
 
@@ -378,7 +356,7 @@ document.getElementById('confirm-form').addEventListener('submit', async (e) => 
   submitBtn.textContent = '✦ Confirmar e enviar';
 });
 
-/* ── CANCELAR RESERVA ── */
+/* ── CANCELAR ── */
 async function cancelReservation(giftId, token) {
   try {
     const res = await fetch(`/api/gifts/${giftId}/cancel`, {
@@ -399,14 +377,12 @@ async function cancelReservation(giftId, token) {
   } catch {}
 }
 
-/* ── OUTROS PRESENTES ── */
+/* ── OUTROS ── */
 document.getElementById('btn-other').addEventListener('click', () => {
   document.getElementById('deliverer-name-other').value = state.guestName;
   document.getElementById('other-description').value = '';
   showStep('other');
 });
-
-document.getElementById('btn-back-other').addEventListener('click', () => showStep('gifts'));
 
 document.getElementById('other-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -436,11 +412,6 @@ document.getElementById('other-form').addEventListener('submit', async (e) => {
 });
 
 /* ── SUCESSO ── */
-document.getElementById('btn-back-to-gifts').addEventListener('click', () => {
-  showStep('gifts');
-  loadGifts();
-});
-
 document.getElementById('btn-finish').addEventListener('click', async () => {
   const btn = document.getElementById('btn-finish');
   btn.disabled = true;
