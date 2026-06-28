@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +13,8 @@
   <div class="bg-pattern"></div>
 
   <main class="container">
-    <!-- Etapa 1: Convite + RSVP -->
+
+    <!-- Etapa 1: Convite -->
     <section id="step-invite" class="step active">
       <div class="card invite-card">
         <div class="card-header">
@@ -23,7 +23,6 @@
           <h1>Chá de Panela</h1>
           <p class="host-line">de <span id="event-host">...</span></p>
         </div>
-
         <div class="event-details">
           <div class="detail">
             <span class="detail-icon">📍</span>
@@ -33,24 +32,17 @@
             </div>
           </div>
         </div>
-
         <p class="invite-message">
           Será um momento especial para celebrarmos juntos este novo capítulo.
           Sua presença é muito importante para nós!
         </p>
-
         <form id="rsvp-form" class="rsvp-form">
           <label for="guest-name">Seu nome</label>
           <input type="text" id="guest-name" placeholder="Como você gostaria de ser chamado(a)?" required minlength="2" autocomplete="off">
-
           <p class="rsvp-question">Você irá ao chá de panela?</p>
           <div class="rsvp-buttons">
-            <button type="button" class="btn btn-yes" data-attending="true">
-              <span>💐</span> Sim, irei!
-            </button>
-            <button type="button" class="btn btn-no" data-attending="false">
-              <span>🤍</span> Não poderei ir
-            </button>
+            <button type="button" class="btn btn-yes" data-attending="true"><span>💐</span> Sim, irei!</button>
+            <button type="button" class="btn btn-no" data-attending="false"><span>🤍</span> Não poderei ir</button>
           </div>
           <p id="rsvp-error" class="error-msg hidden"></p>
         </form>
@@ -70,36 +62,53 @@
     <!-- Etapa 2b: Lista de presentes -->
     <section id="step-gifts" class="step">
       <div class="card gifts-card">
-        <div class="step-nav">
-          <span class="step-badge">Passo 2 de 2</span>
-        </div>
+        <div class="step-nav"><span class="step-badge">Escolha seus presentes</span></div>
         <h2>Lista de Presentes</h2>
         <p class="gifts-intro">
           Olá, <strong id="gifts-guest-name"></strong>! Que alegria que você virá! 💕<br>
-          Escolha um ou mais itens da lista abaixo para nos presentear.
+          Selecione os itens que deseja presentear. Quando terminar, clique em <strong>Continuar</strong>.
         </p>
-
         <div id="gifts-loading" class="loading">Carregando presentes...</div>
         <div id="gifts-grid" class="gifts-grid hidden"></div>
-
         <div class="other-gift-section">
-          <div class="other-gift-card" id="other-gift-card">
+          <div class="other-gift-card">
             <div class="other-gift-info">
               <span class="other-icon">🎀</span>
               <div>
                 <strong>Outros</strong>
-                <p>Quer levar algo que não está na lista?</p>
+                <p>Quer levar algo fora da lista?</p>
               </div>
             </div>
             <button type="button" class="btn btn-outline" id="btn-other">Escolher</button>
           </div>
         </div>
-
         <p id="gifts-error" class="error-msg hidden"></p>
       </div>
     </section>
 
-    <!-- Etapa 3: Outros — descrição + nome -->
+    <!-- Etapa 3: Confirmação dos selecionados -->
+    <section id="step-confirm" class="step">
+      <div class="card name-card">
+        <div class="step-nav"><span class="step-badge">Confirmação</span></div>
+        <div class="selected-gift-preview">
+          <span>🎁</span>
+          <div>
+            <p>Você selecionou:</p>
+            <ul id="confirm-list" class="confirm-list"></ul>
+          </div>
+        </div>
+        <h2>Quem vai entregar?</h2>
+        <p>Informe o nome de quem estará entregando os presentes no dia.</p>
+        <form id="confirm-form">
+          <label for="confirm-deliverer-name">Nome completo</label>
+          <input type="text" id="confirm-deliverer-name" placeholder="Seu nome completo" required minlength="2" autocomplete="off">
+          <p id="confirm-error" class="error-msg hidden"></p>
+          <button type="submit" class="btn btn-primary">✦ Confirmar e enviar</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Etapa 4: Outros presentes -->
     <section id="step-other" class="step">
       <div class="card name-card">
         <div class="step-nav">
@@ -111,54 +120,41 @@
         </div>
         <h2>O que você vai levar?</h2>
         <p>Descreva o presente e informe quem irá entregá-lo.</p>
-
         <form id="other-form">
           <label for="other-description">Descrição do presente</label>
-          <input type="text" id="other-description" placeholder="Ex: Conjunto de toalhas de cozinha" required minlength="2">
-
+          <input type="text" id="other-description" placeholder="Ex: Conjunto de toalhas de cozinha" required minlength="2" autocomplete="off">
           <label for="deliverer-name-other">Nome de quem entregará</label>
           <input type="text" id="deliverer-name-other" placeholder="Seu nome completo" required minlength="2" autocomplete="off">
-
           <p id="other-error" class="error-msg hidden"></p>
           <button type="submit" class="btn btn-primary">✦ Confirmar presente</button>
         </form>
       </div>
     </section>
 
-    <!-- Etapa 4: Confirmação -->
+    <!-- Etapa 5: Sucesso -->
     <section id="step-success" class="step">
       <div class="card success-card">
         <div class="success-icon">✨</div>
         <h2>Tudo certo!</h2>
         <p id="success-message"></p>
         <div class="success-details">
-          <p><strong>Presente:</strong> <span id="success-gift"></span></p>
+          <p><strong>Presente(s):</strong> <span id="success-gift"></span></p>
           <p><strong>Entregue por:</strong> <span id="success-deliverer"></span></p>
         </div>
         <p class="success-note">Mal podemos esperar para te ver no chá de panela! 💐</p>
-        <button type="button" class="btn btn-outline" id="btn-back-to-gifts" style="margin-top:1.5rem">
-          ← Escolher mais presentes
-        </button>
+        <div class="success-actions">
+          <button type="button" class="btn btn-outline" id="btn-back-to-gifts">← Mais presentes</button>
+          <button type="button" class="btn btn-yes" id="btn-finish">Enviar ✦</button>
+        </div>
       </div>
     </section>
+
   </main>
 
-  <!-- Modal de confirmação de presente -->
-  <div id="gift-modal-overlay" class="modal-overlay hidden">
-    <div class="modal-card">
-      <button class="modal-close" id="modal-close">✕</button>
-      <div class="modal-gift-icon">🎁</div>
-      <p class="modal-label">Você escolheu</p>
-      <h3 id="modal-gift-name"></h3>
-      <div class="modal-form">
-        <label for="modal-deliverer-name">Quem vai entregar?</label>
-        <input type="text" id="modal-deliverer-name" placeholder="Seu nome completo" autocomplete="off">
-        <p id="modal-error" class="error-msg hidden"></p>
-        <button class="btn btn-primary btn-confirm" id="modal-confirm-btn">
-          ✦ Confirmar presente
-        </button>
-      </div>
-    </div>
+  <!-- Barra flutuante de continuar -->
+  <div id="continue-bar" class="continue-bar hidden">
+    <span id="continue-count"></span>
+    <button class="btn btn-continue-action" id="btn-continue">Continuar →</button>
   </div>
 
   <footer>
