@@ -924,9 +924,9 @@ footer {
 
 @keyframes floatDown {
   0%   { transform: translateY(-60px) rotate(0deg); opacity: 0; }
-  10%  { opacity: 0.18; }
-  90%  { opacity: 0.12; }
-  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  10%  { opacity: 0.35; }
+  90%  { opacity: 0.28; }
+  100% { transform: translateY(110vh) rotate(25deg); opacity: 0; }
 }
 
 .container {
