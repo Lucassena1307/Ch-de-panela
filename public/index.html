@@ -169,17 +169,17 @@
 
   <script>
     (function() {
-      const symbols = ['💍','🌸','✦','💐','🕊️','✿','♡','✨','🌿','⋆'];
+      const symbols = ['🍳','🥘','🫕','🍲','🥗','🫙','🧂','🥄','🍴','🔪','🫖','☕','🧁','🎂','🍰'];
       const container = document.getElementById('floating-elements');
-      const count = 28;
+      const count = 32;
       for (let i = 0; i < count; i++) {
         const el = document.createElement('span');
         el.className = 'float-el';
         el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
         el.style.left = Math.random() * 100 + 'vw';
-        el.style.fontSize = (0.7 + Math.random() * 0.9) + 'rem';
-        el.style.animationDuration = (12 + Math.random() * 18) + 's';
-        el.style.animationDelay = (Math.random() * 20) + 's';
+        el.style.fontSize = (1.0 + Math.random() * 1.2) + 'rem';
+        el.style.animationDuration = (10 + Math.random() * 16) + 's';
+        el.style.animationDelay = (Math.random() * 18) + 's';
         el.style.opacity = '0';
         container.appendChild(el);
       }
