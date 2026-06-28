@@ -100,11 +100,10 @@
             <ul id="confirm-list" class="confirm-list"></ul>
           </div>
         </div>
-        <h2>Confirme seus dados</h2>
-        <p>Verifique seu nome antes de enviar.</p>
+        <h2>Tudo certo!</h2>
+        <p>Confira seus presentes e clique em confirmar.</p>
         <form id="confirm-form">
-          <label for="confirm-deliverer-name">Nome de quem entregará</label>
-          <input type="text" id="confirm-deliverer-name" placeholder="Seu nome completo" required minlength="2" autocomplete="off">
+          <input type="hidden" id="confirm-deliverer-name">
           <p id="confirm-error" class="error-msg hidden"></p>
           <button type="submit" class="btn btn-primary">✦ Confirmar e enviar</button>
         </form>
