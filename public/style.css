@@ -280,7 +280,7 @@ input[type="text"]:focus {
 }
 
 .btn-choose:hover {
-  background: var(--royal);
+  background: #c45c8a;
 }
 
 .btn-choose:disabled,
