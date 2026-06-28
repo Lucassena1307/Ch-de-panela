@@ -11,6 +11,10 @@
 </head>
 <body>
   <div class="bg-pattern"></div>
+  <!-- Elementos flutuantes decorativos -->
+  <div class="floating-elements" id="floating-elements"></div>
+
+
 
   <main class="container">
 
@@ -162,5 +166,24 @@
   </footer>
 
   <script src="app.js"></script>
+
+  <script>
+    (function() {
+      const symbols = ['💍','🌸','✦','💐','🕊️','✿','♡','✨','🌿','⋆'];
+      const container = document.getElementById('floating-elements');
+      const count = 28;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('span');
+        el.className = 'float-el';
+        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = (0.7 + Math.random() * 0.9) + 'rem';
+        el.style.animationDuration = (12 + Math.random() * 18) + 's';
+        el.style.animationDelay = (Math.random() * 20) + 's';
+        el.style.opacity = '0';
+        container.appendChild(el);
+      }
+    })();
+  </script>
 </body>
 </html>
