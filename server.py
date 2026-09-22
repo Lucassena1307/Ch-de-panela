@@ -21,7 +21,6 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "cha-de-panela.db"
 
 DEFAULT_GIFTS = [
-    # (nome, categoria, limite)
     ("Liquidificador", "Eletrodomésticos", 1),
     ("Mixer de mão", "Eletrodomésticos", 1),
     ("Jogo de panelas antiaderente", "Cozinha", 7),
@@ -77,7 +76,6 @@ def init_db():
         );
     """)
 
-    # Migração: renomear unlimited para max_reservations se necessário
     columns = {row[1] for row in conn.execute("PRAGMA table_info(gifts)").fetchall()}
     if "unlimited" in columns and "max_reservations" not in columns:
         conn.execute("ALTER TABLE gifts ADD COLUMN max_reservations INTEGER DEFAULT 1")
@@ -85,12 +83,10 @@ def init_db():
     if "max_reservations" not in columns:
         conn.execute("ALTER TABLE gifts ADD COLUMN max_reservations INTEGER DEFAULT 1")
 
-    # Migração: adicionar session_token se não existir
     res_columns = {row[1] for row in conn.execute("PRAGMA table_info(gift_reservations)").fetchall()}
     if "session_token" not in res_columns:
         conn.execute("ALTER TABLE gift_reservations ADD COLUMN session_token TEXT")
 
-    # Atualizar limites dos presentes existentes
     limits = {name: limit for name, _, limit in DEFAULT_GIFTS}
     for name, limit in limits.items():
         conn.execute(
@@ -99,7 +95,6 @@ def init_db():
         )
     conn.commit()
 
-    # Inserir presentes se não existirem
     count = conn.execute("SELECT COUNT(*) FROM gifts WHERE is_custom = 0").fetchone()[0]
     if count == 0:
         conn.executemany(
@@ -462,7 +457,6 @@ def api_finish():
     session_token = (data.get("sessionToken") or "").strip()
 
     conn = get_db()
-    # Buscar presentes escolhidos por este convidado nesta sessão
     reservations = conn.execute("""
         SELECT g.name FROM gift_reservations gr
         JOIN gifts g ON g.id = gr.gift_id
