@@ -26,12 +26,11 @@ const continueBar = document.getElementById('continue-bar');
 function showStep(stepKey) {
   Object.values(steps).forEach(el => el.classList.remove('active'));
   steps[stepKey].classList.add('active');
-  // Barra só aparece na aba de presentes
+  
   if (stepKey !== 'gifts') continueBar.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ── Botões Voltar ── */
 document.getElementById('btn-back-decline').addEventListener('click', () => showStep('invite'));
 document.getElementById('btn-back-gifts').addEventListener('click', () => showStep('invite'));
 document.getElementById('btn-back-confirm').addEventListener('click', () => {
@@ -44,7 +43,6 @@ document.getElementById('btn-back-to-gifts').addEventListener('click', () => {
   loadGifts();
 });
 
-/* ── RSVP ── */
 document.querySelectorAll('.rsvp-buttons .btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const guestName = document.getElementById('guest-name').value.trim();
@@ -89,7 +87,6 @@ document.querySelectorAll('.rsvp-buttons .btn').forEach(btn => {
   });
 });
 
-/* ── RENDER ── */
 function renderGiftItem(gift) {
   const myConfirmed = myReservations[gift.id]?.count || 0;
   const myPending   = pendingSelections[gift.id]?.count || 0;
@@ -130,7 +127,6 @@ function renderGiftItem(gift) {
       </div>`;
   }
 
-  // Múltiplas vagas
   const canAdd = (remaining - myPending) > 0 && !isFull;
 
   if (totalMine > 0) {
@@ -269,7 +265,6 @@ function attachGridListeners() {
   });
 }
 
-/* ── BARRA CONTINUAR ── */
 function updateContinueBar() {
   const count = Object.values(pendingSelections).reduce((s, v) => s + v.count, 0);
   if (count > 0) {
@@ -288,12 +283,10 @@ function goToConfirm() {
   list.innerHTML = Object.values(pendingSelections).map(item =>
     `<li><strong>${item.count}×</strong> ${escapeHtml(item.name)}</li>`
   ).join('');
-  // Preencher nome automaticamente
   document.getElementById('confirm-deliverer-name').value = state.guestName;
   showStep('confirm');
 }
 
-/* ── CONFIRMAÇÃO ── */
 document.getElementById('confirm-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const delivererName = document.getElementById('confirm-deliverer-name').value.trim();
@@ -356,7 +349,6 @@ document.getElementById('confirm-form').addEventListener('submit', async (e) => 
   submitBtn.textContent = '✦ Confirmar e enviar';
 });
 
-/* ── CANCELAR ── */
 async function cancelReservation(giftId, token) {
   try {
     const res = await fetch(`/api/gifts/${giftId}/cancel`, {
@@ -377,7 +369,6 @@ async function cancelReservation(giftId, token) {
   } catch {}
 }
 
-/* ── OUTROS ── */
 document.getElementById('btn-other').addEventListener('click', () => {
   document.getElementById('deliverer-name-other').value = state.guestName;
   document.getElementById('other-description').value = '';
@@ -411,7 +402,6 @@ document.getElementById('other-form').addEventListener('submit', async (e) => {
   }
 });
 
-/* ── SUCESSO ── */
 document.getElementById('btn-finish').addEventListener('click', async () => {
   const btn = document.getElementById('btn-finish');
   btn.disabled = true;
