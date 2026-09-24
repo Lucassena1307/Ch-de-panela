@@ -1,12 +1,9 @@
 import os
 import sqlite3
-import smtplib
 import threading
 import urllib.request
 import urllib.error
 import json
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from datetime import datetime
 from pathlib import Path
 
@@ -106,29 +103,45 @@ def init_db():
 
 
 def _send_email_async(subject, html):
+    """Envia e-mail via Resend (API HTTPS) em vez de SMTP.
+    O Render bloqueia as portas SMTP (25/465/587) no plano free,
+    então usamos uma chamada HTTPS normal, que não é bloqueada."""
     organizer = os.getenv("ORGANIZER_EMAIL")
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_pass = os.getenv("SMTP_PASS")
+    resend_key = os.getenv("RESEND_API_KEY")
 
     if not organizer:
         print("ORGANIZER_EMAIL não configurado.")
         return
-    if not smtp_user or not smtp_pass:
+    if not resend_key:
         print("[simulado] " + subject)
         return
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f'"Chá de Panela" <{smtp_user}>'
-    msg["To"] = organizer
-    msg.attach(MIMEText(html, "html", "utf-8"))
+    payload = json.dumps({
+        # "onboarding@resend.dev" funciona sem precisar verificar domínio.
+        # Se depois você verificar um domínio próprio no Resend, troque aqui.
+        "from": "Chá de Panela <onboarding@resend.dev>",
+        "to": [organizer],
+        "subject": subject,
+        "html": html,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {resend_key}",
+            "Content-Type": "application/json",
+        },
+    )
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, organizer, msg.as_string())
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            resp.read()
         print(f"E-mail enviado para {organizer}")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        print(f"Erro ao enviar e-mail (HTTP {e.code}): {body}")
     except Exception as e:
         print(f"Erro ao enviar e-mail: {e}")
 
