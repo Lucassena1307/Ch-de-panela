@@ -117,8 +117,7 @@ def _send_email_async(subject, html):
         return
 
     payload = json.dumps({
-        # "onboarding@resend.dev" funciona sem precisar verificar domínio.
-        # Se depois você verificar um domínio próprio no Resend, troque aqui.
+     
         "from": "Chá de Panela <onboarding@resend.dev>",
         "to": [organizer],
         "subject": subject,
